@@ -51,7 +51,21 @@ wails dev
 # 5. 构建桌面安装包 / 可执行文件（产物输出在 build/bin/）
 wails build
 # wails build -tags webkit2_41
+
+# 6. 使用本地自动构建与归档脚本（自动检测 Ubuntu 24.04 webkit2_41 与 GOPATH/bin）
+make build
+make package
+# 或直接指定参数：
+./scripts/build.sh --version v0.1.0 --out dist --package
 ```
+
+## GitHub Actions 自动构建（`nxovaeng/server-desktop`）
+
+仓库已内置 3 套 GitHub Actions 工作流（位于 `.github/workflows/`）：
+
+- [`ci.yml`](.github/workflows/ci.yml)：向 `main` 分支推送或提交 PR 时自动运行 `gofmt` 检查、`frontend` 类型检查与打包（`vue-tsc + vite`）、`go vet`、`go test -race` 及 `ubuntu-24.04` 下的 Wails 桌面构建校验。
+- [`release.yml`](.github/workflows/release.yml)：推送 `v*` 标签（如 `git tag v0.1.0 && git push origin v0.1.0`）或在 Actions 页面手动触发时自动测试并并行构建 **Linux (`amd64`)**、**Windows (`amd64`)**、**macOS (`universal`)** 安装归档与 `.sha256` 校验文件后发布 GitHub Release。
+- [`build-flexible.yml`](.github/workflows/build-flexible.yml)：手动按需选择目标平台（支持 `all-desktop` / `linux-amd64` / `linux-arm64` / `windows-amd64` / `macos-universal`）、是否跑测试以及是否发布 Pre-release。
 
 > **提示**：使用内置 SSH 隧道连接服务端时，服务端无需额外运行隧道软件，只需确保 OpenSSH（`sshd`）允许 TCP 转发（`/etc/ssh/sshd_config` 中 `AllowTcpForwarding yes`）且能通过公钥/密码认证登录；详见 [`xray-panel-server/README.md`](../xray-panel-server/README.md#ssh-隧道接入服务端要求与排查)。
 

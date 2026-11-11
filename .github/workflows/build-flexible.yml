@@ -1,0 +1,242 @@
+name: Flexible Build
+
+# 手动触发，可按需选择目标平台（含 Linux ARM64 选项）并决定是否发布 Pre-release。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label (e.g., v0.1.0-dev)'
+        required: true
+        default: 'v0.1.0-dev'
+      target_platform:
+        description: 'Target desktop platform'
+        required: true
+        type: choice
+        options:
+          - all-desktop
+          - linux-amd64
+          - linux-arm64
+          - windows-amd64
+          - macos-universal
+        default: 'linux-amd64'
+      run_tests:
+        description: 'Run frontend typecheck & Go tests before build'
+        required: true
+        type: boolean
+        default: true
+      create_release:
+        description: 'Create GitHub Pre-release after build'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build ${{ github.event.inputs.target_platform == 'linux-arm64' && 'linux-arm64' || 'linux-amd64' }}
+    if: ${{ github.event.inputs.target_platform == 'all-desktop' || github.event.inputs.target_platform == 'linux-amd64' || github.event.inputs.target_platform == 'linux-arm64' }}
+    runs-on: ${{ github.event.inputs.target_platform == 'linux-arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Linux desktop dependencies & Wails CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run checks
+        if: ${{ github.event.inputs.run_tests == true || github.event.inputs.run_tests == 'true' }}
+        run: |
+          cd frontend && npm run build && cd ..
+          go vet -tags webkit2_41 ./...
+          go test -tags webkit2_41 -count=1 ./...
+
+      - name: Build & Package
+        run: |
+          chmod +x scripts/build.sh
+          ./scripts/build.sh --skip-test --version "${{ github.event.inputs.version }}" --out dist --package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux
+          path: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+          if-no-files-found: error
+
+  build-windows:
+    name: Build windows-amd64
+    if: ${{ github.event.inputs.target_platform == 'all-desktop' || github.event.inputs.target_platform == 'windows-amd64' }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Wails CLI & Frontend deps
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          cd frontend
+          npm ci
+          cd ..
+
+      - name: Build & Package
+        shell: pwsh
+        run: |
+          $env:PATH = "$(go env GOPATH)\bin;$env:PATH"
+          if ("${{ github.event.inputs.run_tests }}" -eq "true") {
+            cd frontend
+            npm run build
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            cd ..
+            go vet ./...
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            go test -count=1 ./...
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          wails build -clean -trimpath -platform windows/amd64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $ver = "${{ github.event.inputs.version }}"
+          $pkg = "server-desktop-$ver-windows-amd64"
+          New-Item -ItemType Directory -Force -Path "dist/$pkg" | Out-Null
+          Copy-Item "build/bin/*.exe" "dist/$pkg/"
+          if (Test-Path "README.md") { Copy-Item "README.md" "dist/$pkg/" }
+          Compress-Archive -Path "dist/$pkg/*" -DestinationPath "dist/$pkg.zip" -Force
+          $hash = (Get-FileHash "dist/$pkg.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $pkg.zip" | Out-File -FilePath "dist/$pkg.zip.sha256" -Encoding ascii
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-amd64
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macos-universal
+    if: ${{ github.event.inputs.target_platform == 'all-desktop' || github.event.inputs.target_platform == 'macos-universal' }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Wails CLI & Frontend deps
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          cd frontend && npm ci && cd ..
+
+      - name: Run checks
+        if: ${{ github.event.inputs.run_tests == true || github.event.inputs.run_tests == 'true' }}
+        run: |
+          cd frontend && npm run build && cd ..
+          go vet ./...
+          go test -count=1 ./...
+
+      - name: Build & Package
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          wails build -clean -trimpath -platform darwin/universal
+          VERSION="${{ github.event.inputs.version }}"
+          PKG="server-desktop-${VERSION}-macos-universal"
+          mkdir -p "dist/${PKG}"
+          APP_BUNDLE="$(find build/bin -maxdepth 1 -name '*.app' | head -n1)"
+          cp -R "$APP_BUNDLE" "dist/${PKG}/"
+          [ -f README.md ] && cp README.md "dist/${PKG}/"
+          ditto -c -k --sequesterRsrc --keepParent "dist/${PKG}" "dist/${PKG}.zip"
+          (cd dist && shasum -a 256 "${PKG}.zip" > "${PKG}.zip.sha256")
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-universal
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Pre-release
+    needs: [build-linux, build-windows, build-macos]
+    if: ${{ always() && (github.event.inputs.create_release == true || github.event.inputs.create_release == 'true') && (needs.build-linux.result == 'success' || needs.build-linux.result == 'skipped') && (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped') && (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.sha256" \) -exec mv {} release/ \;
+          ls -lh release/
+
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Pre-release ${{ github.event.inputs.version }}
+          draft: false
+          prerelease: true
+          files: release/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
