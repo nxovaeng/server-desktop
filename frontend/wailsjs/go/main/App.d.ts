@@ -68,13 +68,25 @@ export function GetConnectionStatus():Promise<session.ConnectionStatus>;
 
 export function GetDashboard():Promise<apiclient.DashboardResponse>;
 
+export function GetDomain(arg1:string):Promise<apiclient.DomainDTO>;
+
 export function GetGeoData():Promise<apiclient.GeoDataInfo>;
+
+export function GetInbound(arg1:string):Promise<apiclient.InboundDTO>;
 
 export function GetInboundWGClient(arg1:string):Promise<apiclient.InboundWGClientConfigResponse>;
 
 export function GetLogs(arg1:string,arg2:number):Promise<apiclient.LogsResponse>;
 
+export function GetOutbound(arg1:string):Promise<apiclient.OutboundDTO>;
+
+export function GetRouting(arg1:string):Promise<apiclient.RoutingRuleDTO>;
+
 export function GetSettings():Promise<apiclient.SettingsDTO>;
+
+export function GetUser(arg1:string):Promise<apiclient.UserDTO>;
+
+export function GetWGPeer(arg1:number):Promise<apiclient.WGPeerDTO>;
 
 export function GetWGServer():Promise<apiclient.WGServerConfigDTO>;
 

@@ -201,6 +201,16 @@ func (a *App) ListUsers(query string) (apiclient.UserListResponse, error) {
 	return c.ListUsers(ctx, query)
 }
 
+func (a *App) GetUser(id string) (apiclient.UserDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.UserDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetUser(ctx, id)
+}
+
 func (a *App) CreateUser(req apiclient.CreateUserRequest) (apiclient.UserDTO, error) {
 	c, err := a.client()
 	if err != nil {
@@ -263,6 +273,16 @@ func (a *App) ListInbounds() (apiclient.InboundListResponse, error) {
 	return c.ListInbounds(ctx)
 }
 
+func (a *App) GetInbound(id string) (apiclient.InboundDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.InboundDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetInbound(ctx, id)
+}
+
 func (a *App) CreateInbound(req apiclient.UpsertInboundRequest) (apiclient.InboundDTO, error) {
 	c, err := a.client()
 	if err != nil {
@@ -323,6 +343,16 @@ func (a *App) ListOutbounds() (apiclient.OutboundListResponse, error) {
 	ctx, cancel := a.callCtx()
 	defer cancel()
 	return c.ListOutbounds(ctx)
+}
+
+func (a *App) GetOutbound(id string) (apiclient.OutboundDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.OutboundDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetOutbound(ctx, id)
 }
 
 func (a *App) CreateOutbound(req apiclient.UpsertOutboundRequest) (apiclient.OutboundDTO, error) {
@@ -417,6 +447,16 @@ func (a *App) ListRouting() (apiclient.RoutingRuleListResponse, error) {
 	return c.ListRouting(ctx)
 }
 
+func (a *App) GetRouting(id string) (apiclient.RoutingRuleDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.RoutingRuleDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetRouting(ctx, id)
+}
+
 func (a *App) CreateRouting(req apiclient.UpsertRoutingRuleRequest) (apiclient.RoutingRuleDTO, error) {
 	c, err := a.client()
 	if err != nil {
@@ -487,6 +527,16 @@ func (a *App) ListDomains() (apiclient.DomainListResponse, error) {
 	ctx, cancel := a.callCtx()
 	defer cancel()
 	return c.ListDomains(ctx)
+}
+
+func (a *App) GetDomain(id string) (apiclient.DomainDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.DomainDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetDomain(ctx, id)
 }
 
 func (a *App) CreateDomain(req apiclient.UpsertDomainRequest) (apiclient.DomainDTO, error) {
@@ -633,6 +683,16 @@ func (a *App) ListWGPeers() (apiclient.WGPeerListResponse, error) {
 	ctx, cancel := a.callCtx()
 	defer cancel()
 	return c.ListWGPeers(ctx)
+}
+
+func (a *App) GetWGPeer(id uint) (apiclient.WGPeerDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.WGPeerDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetWGPeer(ctx, id)
 }
 
 func (a *App) CreateWGPeer(req apiclient.UpsertWGPeerRequest) (apiclient.WGPeerDTO, error) {

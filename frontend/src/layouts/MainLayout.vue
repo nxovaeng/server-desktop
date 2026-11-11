@@ -193,6 +193,18 @@ watch(
   { immediate: true }
 )
 
+// Token 失效（401）统一提示：任一 desktopApi 调用返回 401 时，
+// connection store 的 handleUnauthorized 会置未连接并递增 authErrorSeq。
+watch(
+  () => conn.authErrorSeq,
+  () => {
+    if (conn.authError) {
+      message.error(conn.authError)
+      conn.clearAuthError()
+    }
+  }
+)
+
 function onSelectMenu(key: string) {
   router.push(key)
 }

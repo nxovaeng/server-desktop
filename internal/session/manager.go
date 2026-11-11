@@ -33,13 +33,14 @@ type ConnectionStatus struct {
 
 // Manager coordinates profile switching, SSH tunnel lifecycles, and API handshake verification.
 type Manager struct {
-	mu      sync.RWMutex
-	store   *store.ProfileStore
-	profile *store.ServerProfile
-	secrets *store.ProfileSecrets
-	tun     *tunnel.Tunnel
-	client  *apiclient.Client
-	status  ConnectionStatus
+	mu        sync.RWMutex
+	connectMu sync.Mutex
+	store     *store.ProfileStore
+	profile   *store.ServerProfile
+	secrets   *store.ProfileSecrets
+	tun       *tunnel.Tunnel
+	client    *apiclient.Client
+	status    ConnectionStatus
 }
 
 func NewManager(profileStore *store.ProfileStore) *Manager {
@@ -47,7 +48,12 @@ func NewManager(profileStore *store.ProfileStore) *Manager {
 }
 
 // Connect establishes a direct or SSH-tunneled session to profileID and verifies the Bearer token.
+// It is serialized with a dedicated mutex: two concurrent Connect calls run one after
+// the other instead of each building a tunnel and leaking the first one.
 func (m *Manager) Connect(ctx context.Context, profileID string, trustTOFU bool) (*ConnectionStatus, error) {
+	m.connectMu.Lock()
+	defer m.connectMu.Unlock()
+
 	profile, secrets, err := m.store.Get(profileID)
 	if err != nil {
 		return nil, err
@@ -56,15 +62,15 @@ func (m *Manager) Connect(ctx context.Context, profileID string, trustTOFU bool)
 		return nil, errors.New("profile is missing API token")
 	}
 
-	m.Disconnect()
+	m.disconnectLocked()
 
 	var newTun *tunnel.Tunnel
 	var baseURL string
 	var dialCtx apiclient.DialContextFunc
 	var warning string
+	var savedFP string
 
 	if profile.Mode == store.ModeSSHTunnel {
-		var savedFP string
 		tunCfg := tunnel.Config{
 			Host:                profile.SSHHost,
 			Port:                profile.SSHPort,
@@ -86,11 +92,10 @@ func (m *Manager) Connect(ctx context.Context, profileID string, trustTOFU bool)
 			return nil, err
 		}
 
-		if savedFP != "" {
-			_ = m.store.UpdateSSHFingerprint(profile.ID, savedFP)
-			profile.SSHFingerprint = savedFP
-		}
-
+		// NOTE: the TOFU fingerprint captured in savedFP is NOT persisted here.
+		// It is only written to the profile after VerifyAuth succeeds below,
+		// so a failed token check cannot pin a fingerprint for a host we
+		// never authenticated against.
 		bindHost := profile.RemoteBindHost
 		if bindHost == "" {
 			bindHost = "127.0.0.1"
@@ -131,6 +136,13 @@ func (m *Manager) Connect(ctx context.Context, profileID string, trustTOFU bool)
 		rtt = newTun.LatencyMs()
 	}
 
+	// Token verified: only now is it safe to trust the TOFU fingerprint
+	// observed during the SSH handshake.
+	if savedFP != "" {
+		_ = m.store.UpdateSSHFingerprint(profile.ID, savedFP)
+		profile.SSHFingerprint = savedFP
+	}
+
 	_ = m.store.SetActive(profile.ID)
 
 	st := ConnectionStatus{
@@ -161,7 +173,16 @@ func (m *Manager) Connect(ctx context.Context, profileID string, trustTOFU bool)
 }
 
 // Disconnect closes any active SSH tunnel and clears the active session client.
+// It takes the same connectMu as Connect so a disconnect racing a connect
+// cannot tear down a tunnel the connect just established.
 func (m *Manager) Disconnect() {
+	m.connectMu.Lock()
+	defer m.connectMu.Unlock()
+	m.disconnectLocked()
+}
+
+// disconnectLocked is Disconnect without the connectMu; callers must hold it.
+func (m *Manager) disconnectLocked() {
 	m.mu.Lock()
 	tun := m.tun
 	m.tun = nil

@@ -669,6 +669,10 @@ export interface XrayRestartResponse {
 export interface XrayConfigResponse {
   config: Record<string, unknown>
   raw: string
+  // 与后端约定的脏状态字段（后端尚未部署时可能缺失，均为可选）
+  current_hash?: string
+  applied_hash?: string
+  dirty?: boolean
 }
 
 export interface XrayApplyResponse {

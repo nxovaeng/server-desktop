@@ -2188,6 +2188,9 @@ export namespace apiclient {
 	export class XrayConfigResponse {
 	    config: {[key: string]: any};
 	    raw: string;
+	    current_hash: string;
+	    applied_hash: string;
+	    dirty: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new XrayConfigResponse(source);
@@ -2197,6 +2200,9 @@ export namespace apiclient {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.config = source["config"];
 	        this.raw = source["raw"];
+	        this.current_hash = source["current_hash"];
+	        this.applied_hash = source["applied_hash"];
+	        this.dirty = source["dirty"];
 	    }
 	}
 	export class XrayRestartResponse {

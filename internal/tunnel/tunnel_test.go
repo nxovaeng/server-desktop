@@ -50,6 +50,16 @@ func startMockSSHServer(t *testing.T, clientPub ssh.PublicKey) (addr string, hos
 			}
 			return nil, errors.New("unauthorized public key")
 		},
+		KeyboardInteractiveCallback: func(c ssh.ConnMetadata, challenge ssh.KeyboardInteractiveChallenge) (*ssh.Permissions, error) {
+			answers, err := challenge("", "", []string{"Password:"}, []bool{false})
+			if err != nil {
+				return nil, err
+			}
+			if len(answers) == 1 && answers[0] == "test-password" {
+				return &ssh.Permissions{}, nil
+			}
+			return nil, errors.New("wrong password")
+		},
 	}
 	cfg.AddHostKey(hostSigner)
 
@@ -264,5 +274,45 @@ func TestSSHTunnelTOFUAndInProcessHTTPClient(t *testing.T) {
 		if !errors.As(err, &apiErr) || apiErr.Code != apiclient.ErrUnauthorized {
 			t.Fatalf("expected ErrUnauthorized APIError, got %v", err)
 		}
+	}
+}
+
+func TestSSHTunnelKeyboardInteractive(t *testing.T) {
+	_, clientPub := generateED25519KeyPEM(t)
+	sshAddr, _, stopSSH := startMockSSHServer(t, clientPub)
+	defer stopSSH()
+
+	sshHost, sshPortStr, _ := net.SplitHostPort(sshAddr)
+	sshPort, _ := strconv.Atoi(sshPortStr)
+
+	// Correct password answers the keyboard-interactive challenge.
+	tun, err := tunnel.Connect(tunnel.Config{
+		Host:              sshHost,
+		Port:              sshPort,
+		User:              "root",
+		AuthMethod:        tunnel.AuthKeyboardInteractive,
+		Password:          "test-password",
+		TrustOnFirstUse:   true,
+		KeepaliveInterval: 500 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("keyboard-interactive connect failed: %v", err)
+	}
+	if !tun.IsConnected() {
+		t.Fatal("tunnel should be connected after keyboard-interactive auth")
+	}
+	_ = tun.Close()
+
+	// Wrong password must fail authentication.
+	_, err = tunnel.Connect(tunnel.Config{
+		Host:            sshHost,
+		Port:            sshPort,
+		User:            "root",
+		AuthMethod:      tunnel.AuthKeyboardInteractive,
+		Password:        "wrong-password",
+		TrustOnFirstUse: true,
+	})
+	if err == nil {
+		t.Fatal("expected error for wrong keyboard-interactive password")
 	}
 }

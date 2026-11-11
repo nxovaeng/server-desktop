@@ -126,8 +126,16 @@ export function GetDashboard() {
   return window['go']['main']['App']['GetDashboard']();
 }
 
+export function GetDomain(arg1) {
+  return window['go']['main']['App']['GetDomain'](arg1);
+}
+
 export function GetGeoData() {
   return window['go']['main']['App']['GetGeoData']();
+}
+
+export function GetInbound(arg1) {
+  return window['go']['main']['App']['GetInbound'](arg1);
 }
 
 export function GetInboundWGClient(arg1) {
@@ -138,8 +146,24 @@ export function GetLogs(arg1, arg2) {
   return window['go']['main']['App']['GetLogs'](arg1, arg2);
 }
 
+export function GetOutbound(arg1) {
+  return window['go']['main']['App']['GetOutbound'](arg1);
+}
+
+export function GetRouting(arg1) {
+  return window['go']['main']['App']['GetRouting'](arg1);
+}
+
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
+}
+
+export function GetUser(arg1) {
+  return window['go']['main']['App']['GetUser'](arg1);
+}
+
+export function GetWGPeer(arg1) {
+  return window['go']['main']['App']['GetWGPeer'](arg1);
 }
 
 export function GetWGServer() {

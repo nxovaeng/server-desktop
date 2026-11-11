@@ -57,7 +57,7 @@ import type {
 } from './types'
 
 export type ConnectionMode = 'ssh_tunnel' | 'direct'
-export type SSHAuthType = 'key_file' | 'key_pem' | 'password' | 'agent'
+export type SSHAuthType = 'key_file' | 'key_pem' | 'password' | 'agent' | 'keyboard_interactive'
 
 export interface ServerProfile {
   id: string
@@ -138,6 +138,7 @@ interface WailsAppBinding {
   GetDashboard(): Promise<DashboardResponse>
 
   ListUsers(query: string): Promise<UserListResponse>
+  GetUser(id: string): Promise<UserDTO>
   CreateUser(req: CreateUserRequest): Promise<UserDTO>
   UpdateUser(id: string, req: UpdateUserRequest): Promise<UserDTO>
   DeleteUser(id: string): Promise<DeleteResponse>
@@ -145,6 +146,7 @@ interface WailsAppBinding {
   ResetUserTraffic(id: string): Promise<UserDTO>
 
   ListInbounds(): Promise<InboundListResponse>
+  GetInbound(id: string): Promise<InboundDTO>
   CreateInbound(req: UpsertInboundRequest): Promise<InboundDTO>
   UpdateInbound(id: string, req: UpsertInboundRequest): Promise<InboundDTO>
   DeleteInbound(id: string): Promise<DeleteResponse>
@@ -152,6 +154,7 @@ interface WailsAppBinding {
   GetInboundWGClient(id: string): Promise<InboundWGClientConfigResponse>
 
   ListOutbounds(): Promise<OutboundListResponse>
+  GetOutbound(id: string): Promise<OutboundDTO>
   CreateOutbound(req: UpsertOutboundRequest): Promise<OutboundDTO>
   UpdateOutbound(id: string, req: UpsertOutboundRequest): Promise<OutboundDTO>
   DeleteOutbound(id: string): Promise<DeleteResponse>
@@ -162,6 +165,7 @@ interface WailsAppBinding {
   GenerateOutboundWGKeys(): Promise<WGKeyPair>
 
   ListRouting(): Promise<RoutingRuleListResponse>
+  GetRouting(id: string): Promise<RoutingRuleDTO>
   CreateRouting(req: UpsertRoutingRuleRequest): Promise<RoutingRuleDTO>
   UpdateRouting(id: string, req: UpsertRoutingRuleRequest): Promise<RoutingRuleDTO>
   DeleteRouting(id: string): Promise<DeleteResponse>
@@ -170,6 +174,7 @@ interface WailsAppBinding {
   GetGeoData(): Promise<GeoDataInfo>
 
   ListDomains(): Promise<{ domains: DomainDTO[]; total: number }>
+  GetDomain(id: string): Promise<DomainDTO>
   CreateDomain(req: UpsertDomainRequest): Promise<DomainDTO>
   UpdateDomain(id: string, req: UpsertDomainRequest): Promise<DomainDTO>
   DeleteDomain(id: string): Promise<DeleteResponse>
@@ -185,6 +190,7 @@ interface WailsAppBinding {
   GetWGServer(): Promise<WGServerConfigDTO>
   UpdateWGServer(req: UpdateWGServerRequest): Promise<WGServerConfigDTO>
   ListWGPeers(): Promise<WGPeerListResponse>
+  GetWGPeer(id: number): Promise<WGPeerDTO>
   CreateWGPeer(req: UpsertWGPeerRequest): Promise<WGPeerDTO>
   UpdateWGPeer(id: number, req: UpsertWGPeerRequest): Promise<WGPeerDTO>
   DeleteWGPeer(id: number): Promise<DeleteResponse>
@@ -234,6 +240,39 @@ export function formatError(err: unknown): string {
   return String(err)
 }
 
+// ---- 401 统一处理中心点 ----
+// Go 端 APIError 只以错误字符串形式经 Wails 桥返回前端，形如
+// "[UNAUTHORIZED] token expired (HTTP 401)"，因此 401 只能从文本识别。
+export function isUnauthorizedError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : ''
+  return msg.includes('(HTTP 401)') || msg.includes('[UNAUTHORIZED]')
+}
+
+type UnauthorizedHandler = () => void
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+// 由 stores/connection.ts 在模块加载时注册，避免 client.ts 反向 import store 形成循环依赖。
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
+type AnyApiFn = (...args: any[]) => Promise<any>
+
+// connectProfile 的 401 由调用方（连接流程）自己展示“连接失败”，不再重复触发失效提示。
+const noUnauthorizedHandling = new Set<string>(['connectProfile'])
+
+function wrapApiCall(fn: AnyApiFn, key: string): AnyApiFn {
+  if (noUnauthorizedHandling.has(key)) return fn
+  return async (...args: any[]) => {
+    try {
+      return await fn(...args)
+    } catch (err) {
+      if (isUnauthorizedError(err)) unauthorizedHandler?.()
+      throw err
+    }
+  }
+}
+
 export function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -255,7 +294,7 @@ export async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
 }
 
-export const desktopApi = {
+const rawDesktopApi = {
   listProfiles: () => getApp().ListProfiles(),
   saveProfile: (profile: Partial<ServerProfile>, secrets: ProfileSecrets) =>
     getApp().SaveProfile(profile, secrets),
@@ -276,6 +315,7 @@ export const desktopApi = {
   getDashboard: () => getApp().GetDashboard(),
 
   listUsers: (q = '') => getApp().ListUsers(q),
+  getUser: (id: string) => getApp().GetUser(id),
   createUser: (req: CreateUserRequest) => getApp().CreateUser(req),
   updateUser: (id: string, req: UpdateUserRequest) => getApp().UpdateUser(id, req),
   deleteUser: (id: string) => getApp().DeleteUser(id),
@@ -283,6 +323,7 @@ export const desktopApi = {
   resetUserTraffic: (id: string) => getApp().ResetUserTraffic(id),
 
   listInbounds: () => getApp().ListInbounds(),
+  getInbound: (id: string) => getApp().GetInbound(id),
   createInbound: (req: UpsertInboundRequest) => getApp().CreateInbound(req),
   updateInbound: (id: string, req: UpsertInboundRequest) => getApp().UpdateInbound(id, req),
   deleteInbound: (id: string) => getApp().DeleteInbound(id),
@@ -290,6 +331,7 @@ export const desktopApi = {
   getInboundWGClient: (id: string) => getApp().GetInboundWGClient(id),
 
   listOutbounds: () => getApp().ListOutbounds(),
+  getOutbound: (id: string) => getApp().GetOutbound(id),
   createOutbound: (req: UpsertOutboundRequest) => getApp().CreateOutbound(req),
   updateOutbound: (id: string, req: UpsertOutboundRequest) => getApp().UpdateOutbound(id, req),
   deleteOutbound: (id: string) => getApp().DeleteOutbound(id),
@@ -300,6 +342,7 @@ export const desktopApi = {
   generateOutboundWGKeys: () => getApp().GenerateOutboundWGKeys(),
 
   listRouting: () => getApp().ListRouting(),
+  getRouting: (id: string) => getApp().GetRouting(id),
   createRouting: (req: UpsertRoutingRuleRequest) => getApp().CreateRouting(req),
   updateRouting: (id: string, req: UpsertRoutingRuleRequest) => getApp().UpdateRouting(id, req),
   deleteRouting: (id: string) => getApp().DeleteRouting(id),
@@ -308,6 +351,7 @@ export const desktopApi = {
   getGeoData: () => getApp().GetGeoData(),
 
   listDomains: () => getApp().ListDomains(),
+  getDomain: (id: string) => getApp().GetDomain(id),
   createDomain: (req: UpsertDomainRequest) => getApp().CreateDomain(req),
   updateDomain: (id: string, req: UpsertDomainRequest) => getApp().UpdateDomain(id, req),
   deleteDomain: (id: string) => getApp().DeleteDomain(id),
@@ -323,6 +367,7 @@ export const desktopApi = {
   getWGServer: () => getApp().GetWGServer(),
   updateWGServer: (req: UpdateWGServerRequest) => getApp().UpdateWGServer(req),
   listWGPeers: () => getApp().ListWGPeers(),
+  getWGPeer: (id: number) => getApp().GetWGPeer(id),
   createWGPeer: (req: UpsertWGPeerRequest) => getApp().CreateWGPeer(req),
   updateWGPeer: (id: number, req: UpsertWGPeerRequest) => getApp().UpdateWGPeer(id, req),
   deleteWGPeer: (id: number) => getApp().DeleteWGPeer(id),
@@ -349,5 +394,18 @@ export const desktopApi = {
   cfTunnelServiceAction: (action: 'start' | 'stop' | 'restart' | 'uninstall') =>
     getApp().CFTunnelServiceAction(action)
 }
+
+// 所有 desktopApi 调用都经此 Proxy：任一方法返回 401 即触发一次已注册的
+// unauthorizedHandler（见 stores/connection.ts 的 handleUnauthorized），
+// 原始错误仍原样抛给调用方，各页面的 message.error 逻辑不受影响。
+export const desktopApi: typeof rawDesktopApi = new Proxy(rawDesktopApi, {
+  get(target, prop, receiver) {
+    const value = Reflect.get(target, prop, receiver)
+    if (typeof value === 'function' && typeof prop === 'string') {
+      return wrapApiCall(value as AnyApiFn, prop)
+    }
+    return value
+  }
+})
 
 export type { APITokenDTO }

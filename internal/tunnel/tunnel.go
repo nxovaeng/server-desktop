@@ -19,10 +19,11 @@ import (
 type AuthMethod string
 
 const (
-	AuthKeyFile  AuthMethod = "key_file"
-	AuthKeyPEM   AuthMethod = "key_pem"
-	AuthPassword AuthMethod = "password"
-	AuthAgent    AuthMethod = "agent"
+	AuthKeyFile             AuthMethod = "key_file"
+	AuthKeyPEM              AuthMethod = "key_pem"
+	AuthPassword            AuthMethod = "password"
+	AuthAgent               AuthMethod = "agent"
+	AuthKeyboardInteractive AuthMethod = "keyboard_interactive"
 )
 
 // Config defines parameters to establish an in-process SSH tunnel without local listening ports.
@@ -280,6 +281,23 @@ func buildAuthMethods(cfg Config) ([]ssh.AuthMethod, net.Conn, error) {
 			return nil, nil, errors.New("ssh password is required")
 		}
 		return []ssh.AuthMethod{ssh.Password(cfg.Password)}, nil, nil
+
+	case AuthKeyboardInteractive:
+		// For hardened sshd setups that only offer keyboard-interactive
+		// (e.g. PAM challenge-response). Every prompt is answered with
+		// the stored password, which covers the common single-question
+		// "Password:" flow; multi-question setups may still fail.
+		if cfg.Password == "" {
+			return nil, nil, errors.New("ssh password is required")
+		}
+		password := cfg.Password
+		return []ssh.AuthMethod{ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+			answers := make([]string, len(questions))
+			for i := range answers {
+				answers[i] = password
+			}
+			return answers, nil
+		})}, nil, nil
 
 	case AuthKeyPEM:
 		if strings.TrimSpace(cfg.KeyPEM) == "" {

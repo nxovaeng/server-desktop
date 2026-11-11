@@ -671,8 +671,11 @@ type XrayRestartResponse struct {
 }
 
 type XrayConfigResponse struct {
-	Config map[string]interface{} `json:"config"`
-	Raw    string                 `json:"raw"`
+	Config      map[string]interface{} `json:"config"`
+	Raw         string                 `json:"raw"`
+	CurrentHash string                 `json:"current_hash,omitempty"`
+	AppliedHash string                 `json:"applied_hash,omitempty"`
+	Dirty       bool                   `json:"dirty,omitempty"`
 }
 
 type XrayApplyResponse struct {

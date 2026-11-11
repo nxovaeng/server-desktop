@@ -70,7 +70,7 @@
     <n-empty v-if="conn.profiles.length === 0" description="暂无服务器节点，点击右上角新增" />
 
     <n-modal v-model:show="showModal" preset="card" :title="editingId ? '编辑节点 Profile' : '新增节点 Profile'" class="w-[620px]">
-      <n-form label-placement="left" label-width="130" size="small">
+      <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="130" size="small">
         <n-form-item label="节点名称" required>
           <n-input v-model:value="form.name" placeholder="例如：东京中转机 / 美西落地机" />
         </n-form-item>
@@ -83,14 +83,14 @@
         </n-form-item>
 
         <template v-if="form.mode === 'ssh_tunnel'">
-          <n-form-item label="SSH 主机" required>
+          <n-form-item label="SSH 主机" path="ssh_host" required>
             <n-input v-model:value="form.ssh_host" placeholder="VPS 公网 IP 或域名" />
           </n-form-item>
-          <n-form-item label="SSH 端口 / 用户">
-            <div class="flex gap-2 w-full">
-              <n-input-number v-model:value="form.ssh_port" :min="1" :max="65535" class="w-32" />
-              <n-input v-model:value="form.ssh_user" placeholder="root" class="flex-1" />
-            </div>
+          <n-form-item label="SSH 端口" path="ssh_port" required>
+            <n-input-number v-model:value="form.ssh_port" :min="1" :max="65535" class="w-32" />
+          </n-form-item>
+          <n-form-item label="SSH 用户" path="ssh_user" required>
+            <n-input v-model:value="form.ssh_user" placeholder="root" />
           </n-form-item>
           <n-form-item label="SSH 认证方式">
             <n-select
@@ -99,6 +99,7 @@
                 { label: '本地私钥文件 (~/.ssh/id_ed25519)', value: 'key_file' },
                 { label: '粘贴私钥 PEM 内容', value: 'key_pem' },
                 { label: 'SSH 密码登录', value: 'password' },
+                { label: 'SSH 密码登录 (keyboard-interactive，部分加固服务器)', value: 'keyboard_interactive' },
                 { label: '系统 SSH Agent (SSH_AUTH_SOCK)', value: 'agent' }
               ]"
             />
@@ -122,7 +123,7 @@
               :placeholder="form.has_ssh_key_passphrase ? '已保存（留空保持不变）' : '无口令请留空'"
             />
           </n-form-item>
-          <n-form-item v-if="form.ssh_auth_type === 'password'" label="SSH 密码">
+          <n-form-item v-if="form.ssh_auth_type === 'password' || form.ssh_auth_type === 'keyboard_interactive'" label="SSH 密码">
             <n-input
               v-model:value="secrets.ssh_password"
               type="password"
@@ -176,7 +177,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useMessage } from 'naive-ui'
+import { useMessage, type FormInst, type FormRules } from 'naive-ui'
 import {
   desktopApi,
   formatError,
@@ -191,6 +192,34 @@ const message = useMessage()
 const showModal = ref(false)
 const saving = ref(false)
 const editingId = ref('')
+const formRef = ref<FormInst | null>(null)
+
+// SSH 相关规则只在隧道模式下生效（直连模式不校验这些字段）
+const rules: FormRules = {
+  ssh_host: {
+    validator: (_rule, value) => {
+      if (form.mode !== 'ssh_tunnel') return true
+      return !!String(value || '').trim() || new Error('请填写 SSH 主机')
+    },
+    trigger: ['blur', 'input']
+  },
+  ssh_port: {
+    validator: (_rule, value) => {
+      if (form.mode !== 'ssh_tunnel') return true
+      if (value === null || value === undefined || value === '') return new Error('请填写 SSH 端口')
+      const n = Number(value)
+      return (Number.isInteger(n) && n >= 1 && n <= 65535) || new Error('SSH 端口需为 1-65535 的整数')
+    },
+    trigger: ['blur', 'change']
+  },
+  ssh_user: {
+    validator: (_rule, value) => {
+      if (form.mode !== 'ssh_tunnel') return true
+      return !!String(value || '').trim() || new Error('请填写 SSH 用户')
+    },
+    trigger: ['blur', 'input']
+  }
+}
 
 const form = reactive<Partial<ServerProfile>>({
   name: '',
@@ -260,6 +289,11 @@ function openEdit(p: ServerProfile) {
 }
 
 async function save() {
+  try {
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
   saving.value = true
   try {
     await desktopApi.saveProfile({ ...form }, { ...secrets })

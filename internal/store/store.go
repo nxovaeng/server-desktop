@@ -25,10 +25,11 @@ const (
 type SSHAuthType string
 
 const (
-	SSHAuthKeyFile  SSHAuthType = "key_file"
-	SSHAuthKeyPEM   SSHAuthType = "key_pem"
-	SSHAuthPassword SSHAuthType = "password"
-	SSHAuthAgent    SSHAuthType = "agent"
+	SSHAuthKeyFile             SSHAuthType = "key_file"
+	SSHAuthKeyPEM              SSHAuthType = "key_pem"
+	SSHAuthPassword            SSHAuthType = "password"
+	SSHAuthAgent               SSHAuthType = "agent"
+	SSHAuthKeyboardInteractive SSHAuthType = "keyboard_interactive"
 )
 
 // ServerProfile holds non-sensitive metadata for a remote xray-panel-server node.

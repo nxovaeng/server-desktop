@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import {
   desktopApi,
   formatError,
+  setUnauthorizedHandler,
   type ConnectionStatus,
   type ServerProfile
 } from '@/api/client'
@@ -12,6 +13,14 @@ export interface TofuChallenge {
   profileName: string
   fingerprint: string
 }
+
+export const UNAUTHORIZED_MESSAGE = 'Token 已失效，请重新填写 Token 后重连'
+
+// 注册 401 中心处理器：client.ts 的 desktopApi Proxy 在任一调用返回 401 时触发。
+// 注册本身不实例化 store（调用时才取），且 client.ts 不 import 本模块，无循环依赖。
+setUnauthorizedHandler(() => {
+  useConnectionStore().handleUnauthorized()
+})
 
 export const useConnectionStore = defineStore('connection', {
   state: () => ({
@@ -26,6 +35,9 @@ export const useConnectionStore = defineStore('connection', {
       latency_ms: 0
     } as ConnectionStatus,
     tofuChallenge: null as TofuChallenge | null,
+    // 最近一次 401 失效提示；authErrorSeq 每次 +1，保证相同文案重复触发时 watch 也能感知
+    authError: null as string | null,
+    authErrorSeq: 0,
     geoDataCache: new Map<string, GeoDataInfo>()
   }),
   getters: {
@@ -105,6 +117,20 @@ export const useConnectionStore = defineStore('connection', {
         mode: '',
         latency_ms: 0
       }
+    },
+
+    // 401 统一处理：连接状态置为未连接（保留 profile_id/name/mode，
+    // 顶部仍显示是哪个节点失效、连接按钮重新出现），并由 MainLayout
+    // 监听 authErrorSeq 弹出失效提示。只改状态、不主动调任何 API，
+    // 不会因提示本身再次触发 401 循环。
+    handleUnauthorized() {
+      this.status = { ...this.status, connected: false }
+      this.authErrorSeq += 1
+      this.authError = UNAUTHORIZED_MESSAGE
+    },
+
+    clearAuthError() {
+      this.authError = null
     },
 
     async testLatency(): Promise<number> {

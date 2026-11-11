@@ -113,12 +113,21 @@ func doEnvelope[T any](ctx context.Context, c *Client, method, path string, reqB
 	if err := json.Unmarshal(respBytes, &env); err != nil {
 		return zero, fmt.Errorf("decode response: %w", err)
 	}
-	if !env.Success && env.Error != nil {
+	if !env.Success {
+		if env.Error != nil {
+			return zero, &APIError{
+				HTTPStatus: resp.StatusCode,
+				Code:       env.Error.Code,
+				Message:    env.Error.Message,
+				Details:    env.Error.Details,
+			}
+		}
+		// A success:false envelope without error details must never be
+		// treated as a successful call returning the zero value.
 		return zero, &APIError{
 			HTTPStatus: resp.StatusCode,
-			Code:       env.Error.Code,
-			Message:    env.Error.Message,
-			Details:    env.Error.Details,
+			Code:       ErrInternal,
+			Message:    "backend returned success:false without error details",
 		}
 	}
 	return env.Data, nil

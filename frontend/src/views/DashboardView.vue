@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { desktopApi, formatBytes, formatError, formatUptime } from '@/api/client'
 import type { DashboardResponse } from '@/api/types'
@@ -120,7 +120,7 @@ const loading = ref(false)
 const data = ref<DashboardResponse | null>(null)
 
 async function load() {
-  if (!conn.status.connected) return
+  if (!conn.status.connected || loading.value) return
   loading.value = true
   try {
     data.value = await desktopApi.getDashboard()
@@ -131,5 +131,34 @@ async function load() {
   }
 }
 
-onMounted(load)
+// 30 秒自动刷新：只在已连接时请求；切页/卸载时清掉定时器
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  refreshTimer = setInterval(() => {
+    if (conn.status.connected) void load()
+  }, 30000)
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer !== null) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+onMounted(() => {
+  void load()
+  startAutoRefresh()
+})
+onUnmounted(stopAutoRefresh)
+
+// 连接建立后（例如从 Profiles 页连上再切回来）立即刷一次
+watch(
+  () => conn.status.connected,
+  (connected) => {
+    if (connected) void load()
+  }
+)
 </script>

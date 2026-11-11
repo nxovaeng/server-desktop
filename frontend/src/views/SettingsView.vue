@@ -155,7 +155,9 @@
 
         <n-card title="Xray config.json 实时预览" size="small">
           <template #header-extra>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+              <n-tag v-if="xrayDirty === true" type="warning" size="small">有未应用更改</n-tag>
+              <n-tag v-else-if="xrayDirty === false" type="success" size="small">配置与运行中一致</n-tag>
               <n-button size="tiny" @click="loadXrayConfig" :disabled="!conn.status.connected" :loading="loadingConfig">
                 生成预览
               </n-button>
@@ -412,6 +414,8 @@ const cfActionLoading = ref('')
 
 const xrayStatus = ref<XrayStatusResponse | null>(null)
 const xrayRaw = ref('')
+// 脏状态：true=有未应用更改，false=与运行中一致，null=未知（后端未返回 current_hash 时不展示）
+const xrayDirty = ref<boolean | null>(null)
 const defaultLimitGB = ref(0)
 
 const baselineInfo = reactive({
@@ -465,6 +469,7 @@ async function load() {
     baselineInfo.recv = settings.monthly_net_baseline_recv
     xrayStatus.value = st
     xrayRaw.value = cfg.raw
+    xrayDirty.value = cfg.current_hash !== undefined ? !!cfg.dirty : null
     cfStatus.value = cf
   } catch (err) {
     message.error('加载设置失败: ' + formatError(err))
@@ -514,6 +519,7 @@ async function loadXrayConfig() {
   try {
     const res = await desktopApi.getXrayConfig()
     xrayRaw.value = res.raw
+    xrayDirty.value = res.current_hash !== undefined ? !!res.dirty : null
   } catch (err) {
     message.error('生成 Xray 配置失败: ' + formatError(err))
   } finally {

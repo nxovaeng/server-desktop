@@ -22,8 +22,8 @@
     <n-data-table :columns="columns" :data="domains" :loading="loading" size="small" />
 
     <n-modal v-model:show="showModal" preset="card" :title="editingId ? '编辑域名' : '新增域名'" class="w-[620px]">
-      <n-form label-placement="left" label-width="130" size="small">
-        <n-form-item label="域名" required>
+      <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="130" size="small">
+        <n-form-item label="域名" path="domain" required>
           <n-input v-model:value="form.domain" placeholder="example.com 或 *.example.com" />
         </n-form-item>
         <n-form-item label="类型" required>
@@ -40,14 +40,14 @@
           <span class="text-xs text-gray-400 ml-2">包含 *.example.com 泛解析</span>
         </n-form-item>
 
-        <n-form-item label="证书路径 (Cert)" required>
+        <n-form-item label="证书路径 (Cert)" path="cert_path" required>
           <n-input
             v-model:value="form.cert_path"
             class="mono"
             placeholder="/root/.acme.sh/example.com_ecc/fullchain.cer"
           />
         </n-form-item>
-        <n-form-item label="私钥路径 (Key)" required>
+        <n-form-item label="私钥路径 (Key)" path="key_path" required>
           <n-input
             v-model:value="form.key_path"
             class="mono"
@@ -276,7 +276,7 @@
 
 <script setup lang="ts">
 import { h, onMounted, reactive, ref, watch } from 'vue'
-import { NButton, NPopconfirm, NSpace, NTag, useMessage, type DataTableColumns } from 'naive-ui'
+import { NButton, NPopconfirm, NSpace, NTag, useMessage, type DataTableColumns, type FormInst, type FormRules } from 'naive-ui'
 import { desktopApi, formatError } from '@/api/client'
 import type {
   CertificateInfo,
@@ -339,6 +339,38 @@ const form = reactive({
   key_path: '',
   enabled: true
 })
+
+const formRef = ref<FormInst | null>(null)
+
+// 域名仅做基本格式校验（允许可选的 *. 泛域名前缀），不做 DNS 解析
+const domainPattern = /^(\*\.)?[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/
+const rules: FormRules = {
+  domain: [
+    { required: true, message: '请填写域名', trigger: ['blur', 'input'] },
+    {
+      validator: (_rule, value) => {
+        const v = String(value || '').trim()
+        return domainPattern.test(v) || new Error('域名格式不正确，如 example.com 或 *.example.com')
+      },
+      trigger: ['blur', 'input']
+    }
+  ],
+  // direct/cdn 都走 Nginx TLS，必须有证书与私钥路径
+  cert_path: {
+    validator: (_rule, value) => {
+      if (form.type !== 'direct' && form.type !== 'cdn') return true
+      return !!String(value || '').trim() || new Error('请填写证书路径')
+    },
+    trigger: ['blur', 'input']
+  },
+  key_path: {
+    validator: (_rule, value) => {
+      if (form.type !== 'direct' && form.type !== 'cdn') return true
+      return !!String(value || '').trim() || new Error('请填写私钥路径')
+    },
+    trigger: ['blur', 'input']
+  }
+}
 
 function certStatusTag(d: DomainDTO) {
   if (!d.has_cert) {
@@ -494,8 +526,9 @@ function openEdit(d: DomainDTO) {
 }
 
 async function save() {
-  if (!form.domain.trim()) {
-    message.warning('请填写域名')
+  try {
+    await formRef.value?.validate()
+  } catch {
     return
   }
   saving.value = true
