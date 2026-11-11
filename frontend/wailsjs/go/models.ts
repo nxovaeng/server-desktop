@@ -498,11 +498,6 @@ export namespace apiclient {
 	    domain: string;
 	    type: string;
 	    is_wildcard: boolean;
-	    server_name: string;
-	    fingerprint: string;
-	    short_id: string;
-	    has_private_key: boolean;
-	    public_key: string;
 	    cert_path: string;
 	    key_path: string;
 	    enabled: boolean;
@@ -526,11 +521,6 @@ export namespace apiclient {
 	        this.domain = source["domain"];
 	        this.type = source["type"];
 	        this.is_wildcard = source["is_wildcard"];
-	        this.server_name = source["server_name"];
-	        this.fingerprint = source["fingerprint"];
-	        this.short_id = source["short_id"];
-	        this.has_private_key = source["has_private_key"];
-	        this.public_key = source["public_key"];
 	        this.cert_path = source["cert_path"];
 	        this.key_path = source["key_path"];
 	        this.enabled = source["enabled"];
@@ -1522,11 +1512,6 @@ export namespace apiclient {
 	    domain: string;
 	    type?: string;
 	    is_wildcard: boolean;
-	    server_name?: string;
-	    fingerprint?: string;
-	    short_id?: string;
-	    private_key?: string;
-	    public_key?: string;
 	    cert_path?: string;
 	    key_path?: string;
 	    enabled?: boolean;
@@ -1540,11 +1525,6 @@ export namespace apiclient {
 	        this.domain = source["domain"];
 	        this.type = source["type"];
 	        this.is_wildcard = source["is_wildcard"];
-	        this.server_name = source["server_name"];
-	        this.fingerprint = source["fingerprint"];
-	        this.short_id = source["short_id"];
-	        this.private_key = source["private_key"];
-	        this.public_key = source["public_key"];
 	        this.cert_path = source["cert_path"];
 	        this.key_path = source["key_path"];
 	        this.enabled = source["enabled"];

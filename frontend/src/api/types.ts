@@ -189,7 +189,7 @@ export interface UpdateUserRequest {
 
 export type InboundProtocol = 'vless' | 'trojan' | 'wireguard'
 export type InboundTransport = 'xhttp' | 'grpc' | 'ws' | 'raw'
-export type DomainType = 'direct' | 'cdn' | 'reality'
+export type DomainType = 'direct' | 'cdn'
 
 export interface DomainSummaryDTO {
   id: string
@@ -452,11 +452,6 @@ export interface DomainDTO {
   domain: string
   type: DomainType
   is_wildcard: boolean
-  server_name: string
-  fingerprint: string
-  short_id: string
-  has_private_key: boolean
-  public_key: string
   cert_path: string
   key_path: string
   enabled: boolean
@@ -477,11 +472,6 @@ export interface UpsertDomainRequest {
   domain: string
   type?: DomainType
   is_wildcard?: boolean
-  server_name?: string
-  fingerprint?: string
-  short_id?: string
-  private_key?: string
-  public_key?: string
   cert_path?: string
   key_path?: string
   enabled?: boolean | null

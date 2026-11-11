@@ -31,8 +31,7 @@
             v-model:value="form.type"
             :options="[
               { label: '直连域名 (direct - Nginx TLS)', value: 'direct' },
-              { label: 'CDN 优选/反代 (cdn)', value: 'cdn' },
-              { label: 'Reality 伪装 (reality)', value: 'reality' }
+              { label: 'CDN 优选/反代 (cdn)', value: 'cdn' }
             ]"
           />
         </n-form-item>
@@ -41,60 +40,20 @@
           <span class="text-xs text-gray-400 ml-2">包含 *.example.com 泛解析</span>
         </n-form-item>
 
-        <template v-if="form.type === 'direct' || form.type === 'cdn'">
-          <n-form-item label="证书路径 (Cert)" required>
-            <n-input
-              v-model:value="form.cert_path"
-              class="mono"
-              placeholder="/root/.acme.sh/example.com_ecc/fullchain.cer"
-            />
-          </n-form-item>
-          <n-form-item label="私钥路径 (Key)" required>
-            <n-input
-              v-model:value="form.key_path"
-              class="mono"
-              placeholder="/root/.acme.sh/example.com_ecc/example.com.key"
-            />
-          </n-form-item>
-        </template>
-
-        <template v-else>
-          <n-form-item label="伪装域名 (SNI)">
-            <n-input v-model:value="form.server_name" placeholder="www.microsoft.com" />
-          </n-form-item>
-          <n-form-item label="uTLS 指纹">
-            <n-select
-              v-model:value="form.fingerprint"
-              filterable
-              tag
-              clearable
-              :options="[
-                { label: 'chrome', value: 'chrome' },
-                { label: 'firefox', value: 'firefox' },
-                { label: 'safari', value: 'safari' },
-                { label: 'ios', value: 'ios' },
-                { label: 'android', value: 'android' },
-                { label: 'edge', value: 'edge' },
-                { label: 'random', value: 'random' }
-              ]"
-            />
-          </n-form-item>
-          <n-form-item label="Short ID">
-            <n-input v-model:value="form.short_id" class="mono" placeholder="16 进制短 ID（如 a1b2c3d4）" />
-          </n-form-item>
-          <n-form-item label="Reality 私钥">
-            <n-input
-              v-model:value="form.private_key"
-              type="password"
-              show-password-on="click"
-              class="mono"
-              :placeholder="hasExistingPrivateKey ? '已保存（留空保持不变）' : '可选，X25519 私钥'"
-            />
-          </n-form-item>
-          <n-form-item label="Reality 公钥">
-            <n-input v-model:value="form.public_key" class="mono" placeholder="可选，客户端共享公钥" />
-          </n-form-item>
-        </template>
+        <n-form-item label="证书路径 (Cert)" required>
+          <n-input
+            v-model:value="form.cert_path"
+            class="mono"
+            placeholder="/root/.acme.sh/example.com_ecc/fullchain.cer"
+          />
+        </n-form-item>
+        <n-form-item label="私钥路径 (Key)" required>
+          <n-input
+            v-model:value="form.key_path"
+            class="mono"
+            placeholder="/root/.acme.sh/example.com_ecc/example.com.key"
+          />
+        </n-form-item>
 
         <n-form-item label="启用">
           <n-switch v-model:value="form.enabled" />
@@ -339,7 +298,6 @@ const importingPath = ref('')
 
 const showModal = ref(false)
 const editingId = ref('')
-const hasExistingPrivateKey = ref(false)
 
 const showScanModal = ref(false)
 const scanResult = ref<ScanCertificatesResponse | null>(null)
@@ -377,20 +335,12 @@ const form = reactive({
   domain: '',
   type: 'direct' as DomainType,
   is_wildcard: false,
-  server_name: '',
-  fingerprint: 'chrome',
-  short_id: '',
-  private_key: '',
-  public_key: '',
   cert_path: '',
   key_path: '',
   enabled: true
 })
 
 function certStatusTag(d: DomainDTO) {
-  if (d.type === 'reality') {
-    return h(NTag, { size: 'small', type: 'info', bordered: false }, () => d.server_name ? `SNI: ${d.server_name}` : 'Reality 模式')
-  }
   if (!d.has_cert) {
     return h(NTag, { size: 'small', type: 'error' }, () => '未检测到有效证书')
   }
@@ -416,7 +366,7 @@ const columns: DataTableColumns<DomainDTO> = [
     key: 'type',
     width: 90,
     render: (r) => {
-      const label = r.type === 'direct' ? '直连' : r.type === 'cdn' ? 'CDN' : 'Reality'
+      const label = r.type === 'direct' ? '直连' : 'CDN'
       return h(NTag, { size: 'small', bordered: false }, () => label)
     }
   },
@@ -519,16 +469,10 @@ async function load() {
 
 function openCreate() {
   editingId.value = ''
-  hasExistingPrivateKey.value = false
   Object.assign(form, {
     domain: '',
     type: 'direct' as DomainType,
     is_wildcard: false,
-    server_name: '',
-    fingerprint: 'chrome',
-    short_id: '',
-    private_key: '',
-    public_key: '',
     cert_path: '',
     key_path: '',
     enabled: true
@@ -538,16 +482,10 @@ function openCreate() {
 
 function openEdit(d: DomainDTO) {
   editingId.value = d.id
-  hasExistingPrivateKey.value = d.has_private_key
   Object.assign(form, {
     domain: d.domain,
     type: d.type,
     is_wildcard: d.is_wildcard,
-    server_name: d.server_name,
-    fingerprint: d.fingerprint || 'chrome',
-    short_id: d.short_id,
-    private_key: '',
-    public_key: d.public_key,
     cert_path: d.cert_path,
     key_path: d.key_path,
     enabled: d.enabled
@@ -566,11 +504,6 @@ async function save() {
       domain: form.domain.trim(),
       type: form.type,
       is_wildcard: form.is_wildcard,
-      server_name: form.server_name.trim(),
-      fingerprint: form.fingerprint,
-      short_id: form.short_id.trim(),
-      private_key: form.private_key.trim(),
-      public_key: form.public_key.trim(),
       cert_path: form.cert_path.trim(),
       key_path: form.key_path.trim(),
       enabled: form.enabled
@@ -596,9 +529,6 @@ async function toggle(d: DomainDTO) {
       domain: d.domain,
       type: d.type,
       is_wildcard: d.is_wildcard,
-      server_name: d.server_name,
-      fingerprint: d.fingerprint,
-      short_id: d.short_id,
       cert_path: d.cert_path,
       key_path: d.key_path,
       enabled: !d.enabled
