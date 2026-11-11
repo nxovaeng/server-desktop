@@ -2,10 +2,16 @@
   <div class="space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-2">
       <h2 class="text-xl font-semibold">域名与证书管理</h2>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <n-button size="small" @click="load" :disabled="!conn.status.connected">刷新</n-button>
         <n-button size="small" secondary :disabled="!conn.status.connected" :loading="scanning" @click="openScanModal">
           扫描本地证书
+        </n-button>
+        <n-button size="small" secondary :disabled="!conn.status.connected" @click="openUploadModal">
+          上传证书 (PEM)
+        </n-button>
+        <n-button size="small" type="info" secondary :disabled="!conn.status.connected" @click="openIssueModal">
+          API 申请证书 (CF / LuaDNS)
         </n-button>
         <n-button size="small" type="primary" :disabled="!conn.status.connected" @click="openCreate">
           新增域名
@@ -124,6 +130,188 @@
         <n-data-table :columns="scanColumns" :data="scanResult.certificates" size="small" :max-height="380" />
       </div>
     </n-modal>
+
+    <n-modal v-model:show="showUploadModal" preset="card" title="上传 TLS 证书与私钥 (PEM)" class="w-[660px]">
+      <n-form label-placement="left" label-width="120" size="small">
+        <div class="grid grid-cols-2 gap-3">
+          <n-form-item label="绑定域名" required>
+            <n-input v-model:value="uploadForm.domain" class="mono" placeholder="example.com 或 *.example.com" />
+          </n-form-item>
+          <n-form-item label="域名类型">
+            <n-select
+              v-model:value="uploadForm.type"
+              :options="[
+                { label: '直连域名 (direct)', value: 'direct' },
+                { label: 'CDN 反代 (cdn)', value: 'cdn' }
+              ]"
+            />
+          </n-form-item>
+        </div>
+
+        <n-form-item label="证书内容 (PEM)" required>
+          <div class="w-full space-y-1.5">
+            <input
+              type="file"
+              accept=".pem,.cer,.crt,.txt"
+              class="text-xs text-gray-300"
+              @change="(e) => onPickPEMFile(e, 'cert')"
+            />
+            <n-input
+              v-model:value="uploadForm.cert_pem"
+              type="textarea"
+              :rows="5"
+              class="mono text-xs"
+              placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+            />
+          </div>
+        </n-form-item>
+
+        <n-form-item label="私钥内容 (KEY)" required>
+          <div class="w-full space-y-1.5">
+            <input
+              type="file"
+              accept=".key,.pem,.txt"
+              class="text-xs text-gray-300"
+              @change="(e) => onPickPEMFile(e, 'key')"
+            />
+            <n-input
+              v-model:value="uploadForm.key_pem"
+              type="textarea"
+              :rows="4"
+              class="mono text-xs"
+              placeholder="-----BEGIN PRIVATE KEY----- / -----BEGIN EC PRIVATE KEY-----&#10;..."
+            />
+          </div>
+        </n-form-item>
+      </n-form>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <n-button size="small" @click="showUploadModal = false">取消</n-button>
+          <n-button size="small" type="primary" :loading="uploading" @click="submitUpload">校验并上传保存</n-button>
+        </div>
+      </template>
+    </n-modal>
+
+    <n-modal v-model:show="showIssueModal" preset="card" title="通过 DNS API 自动申请 ACME 证书" class="w-[660px]">
+      <n-form label-placement="left" label-width="135" size="small">
+        <n-alert type="info" size="small" class="mb-3">
+          服务端将通过 DNS-01 自动完成验证与签发（支持泛域名），并将凭据交由 acme.sh 本地托管用于后续自动续期（面板数据库不落盘您的 API 密钥）。
+        </n-alert>
+
+        <div class="grid grid-cols-2 gap-3">
+          <n-form-item label="申请域名" required>
+            <n-input v-model:value="issueForm.domain" class="mono" placeholder="example.com 或 *.example.com" />
+          </n-form-item>
+          <n-form-item label="域名类型">
+            <n-select
+              v-model:value="issueForm.type"
+              :options="[
+                { label: '直连域名 (direct)', value: 'direct' },
+                { label: 'CDN 反代 (cdn)', value: 'cdn' }
+              ]"
+            />
+          </n-form-item>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <n-form-item label="同时申请泛域名">
+            <n-switch v-model:value="issueForm.include_wildcard" />
+            <span class="text-xs text-gray-400 ml-2">包含 *.域名</span>
+          </n-form-item>
+          <n-form-item label="强制重签">
+            <n-switch v-model:value="issueForm.force" />
+          </n-form-item>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <n-form-item label="DNS 服务商" required>
+            <n-select
+              v-model:value="issueForm.provider"
+              :options="[
+                { label: 'Cloudflare (dns_cf)', value: 'cf' },
+                { label: 'LuaDNS (dns_lua)', value: 'luadns' }
+              ]"
+            />
+          </n-form-item>
+          <n-form-item label="CA 机构">
+            <n-select
+              v-model:value="issueForm.ca_server"
+              :options="[
+                { label: 'Let\'s Encrypt (推荐，免 EAB)', value: 'letsencrypt' },
+                { label: 'ZeroSSL (需填邮箱)', value: 'zerossl' }
+              ]"
+            />
+          </n-form-item>
+        </div>
+
+        <n-form-item label="账户/续期邮箱" :required="issueForm.ca_server === 'zerossl'">
+          <n-input v-model:value="issueForm.email" placeholder="Let's Encrypt 可选；ZeroSSL 必填" />
+        </n-form-item>
+
+        <template v-if="issueForm.provider === 'cf'">
+          <n-form-item label="CF 鉴权方式">
+            <n-radio-group v-model:value="cfAuthMode" size="small">
+              <n-radio-button value="token">Scoped API Token (推荐)</n-radio-button>
+              <n-radio-button value="key">Global API Key + Email</n-radio-button>
+            </n-radio-group>
+          </n-form-item>
+          <n-form-item v-if="cfAuthMode === 'token'" label="CF_Token" required>
+            <n-input
+              v-model:value="issueForm.cf_token"
+              type="password"
+              show-password-on="click"
+              class="mono"
+              placeholder="需具备 Zone -> DNS -> Edit 权限"
+            />
+          </n-form-item>
+          <template v-else>
+            <n-form-item label="CF_Email" required>
+              <n-input v-model:value="issueForm.cf_email" class="mono" placeholder="Cloudflare 登录邮箱" />
+            </n-form-item>
+            <n-form-item label="CF_Key" required>
+              <n-input
+                v-model:value="issueForm.cf_key"
+                type="password"
+                show-password-on="click"
+                class="mono"
+                placeholder="Cloudflare Global API Key"
+              />
+            </n-form-item>
+          </template>
+          <n-form-item label="CF_Zone_ID (可选)">
+            <n-input v-model:value="issueForm.cf_zone_id" class="mono" placeholder="单域名 Token 若限制查询域列表可填" />
+          </n-form-item>
+        </template>
+
+        <template v-else>
+          <n-form-item label="LuaDNS 邮箱" required>
+            <n-input v-model:value="issueForm.lua_email" class="mono" placeholder="LUA_Email" />
+          </n-form-item>
+          <n-form-item label="LuaDNS API Key" required>
+            <n-input
+              v-model:value="issueForm.lua_key"
+              type="password"
+              show-password-on="click"
+              class="mono"
+              placeholder="LUA_Key"
+            />
+          </n-form-item>
+        </template>
+
+        <div v-if="issueOutput" class="mt-2">
+          <div class="text-xs text-gray-400 mb-1">签发日志：</div>
+          <pre class="p-2.5 rounded bg-black/50 border border-white/10 mono text-xs max-h-40 overflow-auto whitespace-pre-wrap">{{ issueOutput }}</pre>
+        </div>
+      </n-form>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <n-button size="small" @click="showIssueModal = false">关闭</n-button>
+          <n-button size="small" type="primary" :loading="issuing" @click="submitIssue">立即申请并绑定</n-button>
+        </div>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -155,6 +343,35 @@ const hasExistingPrivateKey = ref(false)
 
 const showScanModal = ref(false)
 const scanResult = ref<ScanCertificatesResponse | null>(null)
+
+const showUploadModal = ref(false)
+const uploading = ref(false)
+const uploadForm = reactive({
+  domain: '',
+  type: 'direct' as 'direct' | 'cdn',
+  cert_pem: '',
+  key_pem: ''
+})
+
+const showIssueModal = ref(false)
+const issuing = ref(false)
+const issueOutput = ref('')
+const cfAuthMode = ref<'token' | 'key'>('token')
+const issueForm = reactive({
+  domain: '',
+  include_wildcard: true,
+  type: 'direct' as 'direct' | 'cdn',
+  provider: 'cf' as 'cf' | 'luadns',
+  cf_token: '',
+  cf_key: '',
+  cf_email: '',
+  cf_zone_id: '',
+  lua_key: '',
+  lua_email: '',
+  ca_server: 'letsencrypt' as 'letsencrypt' | 'zerossl',
+  email: '',
+  force: false
+})
 
 const form = reactive({
   domain: '',
@@ -447,6 +664,95 @@ async function batchImportCerts() {
     message.error('批量导入失败: ' + formatError(err))
   } finally {
     batchImporting.value = false
+  }
+}
+
+function openUploadModal() {
+  Object.assign(uploadForm, {
+    domain: '',
+    type: 'direct' as 'direct' | 'cdn',
+    cert_pem: '',
+    key_pem: ''
+  })
+  showUploadModal.value = true
+}
+
+async function onPickPEMFile(ev: Event, target: 'cert' | 'key') {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  const text = await file.text()
+  if (target === 'cert') {
+    uploadForm.cert_pem = text
+  } else {
+    uploadForm.key_pem = text
+  }
+}
+
+async function submitUpload() {
+  if (!uploadForm.domain.trim() || !uploadForm.cert_pem.trim() || !uploadForm.key_pem.trim()) {
+    message.warning('请填写域名并上传/粘贴证书和私钥内容')
+    return
+  }
+  uploading.value = true
+  try {
+    const dom = await desktopApi.uploadDomainCert({
+      domain: uploadForm.domain.trim(),
+      type: uploadForm.type,
+      cert_pem: uploadForm.cert_pem,
+      key_pem: uploadForm.key_pem
+    })
+    showUploadModal.value = false
+    message.success(`证书 ${dom.domain} 上传并校验通过`)
+    await load()
+  } catch (err) {
+    message.error('上传证书失败: ' + formatError(err))
+  } finally {
+    uploading.value = false
+  }
+}
+
+function openIssueModal() {
+  issueOutput.value = ''
+  showIssueModal.value = true
+}
+
+async function submitIssue() {
+  if (!issueForm.domain.trim()) {
+    message.warning('请填写待申请证书的域名')
+    return
+  }
+  issuing.value = true
+  issueOutput.value = ''
+  try {
+    const res = await desktopApi.issueDomainCert({
+      domain: issueForm.domain.trim(),
+      include_wildcard: issueForm.include_wildcard,
+      type: issueForm.type,
+      provider: issueForm.provider,
+      cf_token: issueForm.provider === 'cf' && cfAuthMode.value === 'token' ? issueForm.cf_token.trim() : '',
+      cf_key: issueForm.provider === 'cf' && cfAuthMode.value === 'key' ? issueForm.cf_key.trim() : '',
+      cf_email: issueForm.provider === 'cf' && cfAuthMode.value === 'key' ? issueForm.cf_email.trim() : '',
+      cf_zone_id: issueForm.provider === 'cf' ? issueForm.cf_zone_id.trim() : '',
+      lua_key: issueForm.provider === 'luadns' ? issueForm.lua_key.trim() : '',
+      lua_email: issueForm.provider === 'luadns' ? issueForm.lua_email.trim() : '',
+      ca_server: issueForm.ca_server,
+      email: issueForm.email.trim(),
+      force: issueForm.force
+    })
+    issueOutput.value = res.output || '签发成功'
+    message.success(
+      res.reused_existing
+        ? `域名 ${res.domain.domain} 已有有效证书，已同步导入`
+        : `域名 ${res.domain.domain} 证书申请并配置成功`
+    )
+    await load()
+  } catch (err) {
+    const msg = formatError(err)
+    issueOutput.value = msg
+    message.error('申请证书失败: ' + msg)
+  } finally {
+    issuing.value = false
   }
 }
 

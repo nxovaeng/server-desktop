@@ -19,6 +19,12 @@
       </div>
     </div>
 
+    <n-alert v-if="conn.status.connected && !conn.status.sub_domain" type="info" size="small">
+      当前尚未设置订阅域名（<span class="mono">sub_domain</span>）：若需对客户端开放公网 HTTPS 订阅，请先前往
+      <n-button text type="primary" @click="router.push('/settings')">系统设置</n-button>
+      配置订阅域名并开启 Nginx 订阅反代或部署 Cloudflare Tunnel。
+    </n-alert>
+
     <n-data-table :columns="columns" :data="users" :loading="loading" size="small" />
 
     <n-modal v-model:show="showModal" preset="card" :title="editingId ? '编辑用户' : '新增用户'" class="w-[540px]">
@@ -85,12 +91,14 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { NButton, NPopconfirm, NSpace, NTag, useMessage, type DataTableColumns } from 'naive-ui'
 import QRCode from 'qrcode'
 import { copyToClipboard, desktopApi, formatBytes, formatError } from '@/api/client'
 import type { UserDTO } from '@/api/types'
 import { useConnectionStore } from '@/stores/connection'
 
+const router = useRouter()
 const conn = useConnectionStore()
 const message = useMessage()
 

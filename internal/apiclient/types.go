@@ -525,6 +525,38 @@ type ImportCertRequest struct {
 	KeyPath  string `json:"key_path"`
 }
 
+type UploadCertRequest struct {
+	Domain  string `json:"domain"`
+	Type    string `json:"type,omitempty"`
+	CertPEM string `json:"cert_pem"`
+	KeyPEM  string `json:"key_pem"`
+	Enabled *bool  `json:"enabled,omitempty"`
+}
+
+type IssueCertRequest struct {
+	Domain          string `json:"domain"`
+	IncludeWildcard bool   `json:"include_wildcard"`
+	Type            string `json:"type,omitempty"`
+	Provider        string `json:"provider"`
+	CFToken         string `json:"cf_token,omitempty"`
+	CFKey           string `json:"cf_key,omitempty"`
+	CFEmail         string `json:"cf_email,omitempty"`
+	CFZoneID        string `json:"cf_zone_id,omitempty"`
+	LuaKey          string `json:"lua_key,omitempty"`
+	LuaEmail        string `json:"lua_email,omitempty"`
+	CAServer        string `json:"ca_server,omitempty"`
+	Email           string `json:"email,omitempty"`
+	Force           bool   `json:"force"`
+}
+
+type IssueCertResponse struct {
+	Domain         DomainDTO `json:"domain"`
+	Provider       string    `json:"provider"`
+	CAServer       string    `json:"ca_server"`
+	ReusedExisting bool      `json:"reused_existing"`
+	Output         string    `json:"output"`
+}
+
 type WGServiceStatus struct {
 	IsLinux         bool   `json:"is_linux"`
 	IsInstalled     bool   `json:"is_installed"`
@@ -664,6 +696,9 @@ type SettingsDTO struct {
 	PanelTitle              string `json:"panel_title"`
 	SubDomain               string `json:"sub_domain"`
 	SubPath                 string `json:"sub_path"`
+	SubNginxEnabled         bool   `json:"sub_nginx_enabled"`
+	APIDomain               string `json:"api_domain"`
+	APINginxEnabled         bool   `json:"api_nginx_enabled"`
 	ServerPublicHost        string `json:"server_public_host"`
 	XrayLogLevel            string `json:"xray_log_level"`
 	EnableTrafficStats      bool   `json:"enable_traffic_stats"`
@@ -680,6 +715,9 @@ type UpdateSettingsRequest struct {
 	PanelTitle           *string `json:"panel_title,omitempty"`
 	SubDomain            *string `json:"sub_domain,omitempty"`
 	SubPath              *string `json:"sub_path,omitempty"`
+	SubNginxEnabled      *bool   `json:"sub_nginx_enabled,omitempty"`
+	APIDomain            *string `json:"api_domain,omitempty"`
+	APINginxEnabled      *bool   `json:"api_nginx_enabled,omitempty"`
 	ServerPublicHost     *string `json:"server_public_host,omitempty"`
 	XrayLogLevel         *string `json:"xray_log_level,omitempty"`
 	EnableTrafficStats   *bool   `json:"enable_traffic_stats,omitempty"`
@@ -687,6 +725,60 @@ type UpdateSettingsRequest struct {
 	DefaultTrafficLimit  *int64  `json:"default_traffic_limit,omitempty"`
 	DefaultExpireDays    *int    `json:"default_expire_days,omitempty"`
 	DirectDomainStrategy *string `json:"direct_domain_strategy,omitempty"`
+}
+
+type SubscriptionNginxResponse struct {
+	Enabled           bool   `json:"enabled"`
+	Domain            string `json:"domain"`
+	SubPath           string `json:"sub_path"`
+	ConfigPath        string `json:"config_path"`
+	MatchedCertDomain string `json:"matched_cert_domain"`
+	Reloaded          bool   `json:"reloaded"`
+	Message           string `json:"message"`
+}
+
+type APINginxResponse struct {
+	Enabled           bool   `json:"enabled"`
+	Domain            string `json:"domain"`
+	DirectURL         string `json:"direct_url"`
+	ConfigPath        string `json:"config_path"`
+	MatchedCertDomain string `json:"matched_cert_domain"`
+	Reloaded          bool   `json:"reloaded"`
+	Message           string `json:"message"`
+}
+
+type CFTunnelStatus struct {
+	IsLinux             bool   `json:"is_linux"`
+	Installed           bool   `json:"installed"`
+	BinaryPath          string `json:"binary_path"`
+	Version             string `json:"version"`
+	ServiceInstalled    bool   `json:"service_installed"`
+	Active              bool   `json:"active"`
+	Enabled             bool   `json:"enabled"`
+	Status              string `json:"status"`
+	PanelListen         string `json:"panel_listen"`
+	SubDomain           string `json:"sub_domain"`
+	SubPath             string `json:"sub_path"`
+	RecommendedService  string `json:"recommended_service"`
+	RecommendedPathRule string `json:"recommended_path_rule"`
+}
+
+type CFTunnelSetupRequest struct {
+	TunnelToken string `json:"tunnel_token"`
+}
+
+type CFTunnelInstallResponse struct {
+	Installed  bool   `json:"installed"`
+	BinaryPath string `json:"binary_path"`
+	Version    string `json:"version"`
+	Message    string `json:"message"`
+}
+
+type CFTunnelActionResponse struct {
+	Action  string         `json:"action"`
+	Success bool           `json:"success"`
+	Status  CFTunnelStatus `json:"status"`
+	Message string         `json:"message"`
 }
 
 type PanelRestartResponse struct {

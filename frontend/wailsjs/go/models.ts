@@ -1,5 +1,29 @@
 export namespace apiclient {
 	
+	export class APINginxResponse {
+	    enabled: boolean;
+	    domain: string;
+	    direct_url: string;
+	    config_path: string;
+	    matched_cert_domain: string;
+	    reloaded: boolean;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new APINginxResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.domain = source["domain"];
+	        this.direct_url = source["direct_url"];
+	        this.config_path = source["config_path"];
+	        this.matched_cert_domain = source["matched_cert_domain"];
+	        this.reloaded = source["reloaded"];
+	        this.message = source["message"];
+	    }
+	}
 	export class APITokenDTO {
 	    id: string;
 	    name: string;
@@ -75,6 +99,97 @@ export namespace apiclient {
 	        this.panel_title = source["panel_title"];
 	    }
 	}
+	export class CFTunnelStatus {
+	    is_linux: boolean;
+	    installed: boolean;
+	    binary_path: string;
+	    version: string;
+	    service_installed: boolean;
+	    active: boolean;
+	    enabled: boolean;
+	    status: string;
+	    panel_listen: string;
+	    sub_domain: string;
+	    sub_path: string;
+	    recommended_service: string;
+	    recommended_path_rule: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CFTunnelStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.is_linux = source["is_linux"];
+	        this.installed = source["installed"];
+	        this.binary_path = source["binary_path"];
+	        this.version = source["version"];
+	        this.service_installed = source["service_installed"];
+	        this.active = source["active"];
+	        this.enabled = source["enabled"];
+	        this.status = source["status"];
+	        this.panel_listen = source["panel_listen"];
+	        this.sub_domain = source["sub_domain"];
+	        this.sub_path = source["sub_path"];
+	        this.recommended_service = source["recommended_service"];
+	        this.recommended_path_rule = source["recommended_path_rule"];
+	    }
+	}
+	export class CFTunnelActionResponse {
+	    action: string;
+	    success: boolean;
+	    status: CFTunnelStatus;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CFTunnelActionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.action = source["action"];
+	        this.success = source["success"];
+	        this.status = this.convertValues(source["status"], CFTunnelStatus);
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CFTunnelInstallResponse {
+	    installed: boolean;
+	    binary_path: string;
+	    version: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CFTunnelInstallResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.installed = source["installed"];
+	        this.binary_path = source["binary_path"];
+	        this.version = source["version"];
+	        this.message = source["message"];
+	    }
+	}
+	
 	export class CertificateInfo {
 	    domain: string;
 	    domains: string[];
@@ -771,6 +886,80 @@ export namespace apiclient {
 	        this.wg_conf = source["wg_conf"];
 	    }
 	}
+	export class IssueCertRequest {
+	    domain: string;
+	    include_wildcard: boolean;
+	    type?: string;
+	    provider: string;
+	    cf_token?: string;
+	    cf_key?: string;
+	    cf_email?: string;
+	    cf_zone_id?: string;
+	    lua_key?: string;
+	    lua_email?: string;
+	    ca_server?: string;
+	    email?: string;
+	    force: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new IssueCertRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = source["domain"];
+	        this.include_wildcard = source["include_wildcard"];
+	        this.type = source["type"];
+	        this.provider = source["provider"];
+	        this.cf_token = source["cf_token"];
+	        this.cf_key = source["cf_key"];
+	        this.cf_email = source["cf_email"];
+	        this.cf_zone_id = source["cf_zone_id"];
+	        this.lua_key = source["lua_key"];
+	        this.lua_email = source["lua_email"];
+	        this.ca_server = source["ca_server"];
+	        this.email = source["email"];
+	        this.force = source["force"];
+	    }
+	}
+	export class IssueCertResponse {
+	    domain: DomainDTO;
+	    provider: string;
+	    ca_server: string;
+	    reused_existing: boolean;
+	    output: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IssueCertResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = this.convertValues(source["domain"], DomainDTO);
+	        this.provider = source["provider"];
+	        this.ca_server = source["ca_server"];
+	        this.reused_existing = source["reused_existing"];
+	        this.output = source["output"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class LogsResponse {
 	    service: string;
 	    lines: number;
@@ -1090,6 +1279,9 @@ export namespace apiclient {
 	    panel_title: string;
 	    sub_domain: string;
 	    sub_path: string;
+	    sub_nginx_enabled: boolean;
+	    api_domain: string;
+	    api_nginx_enabled: boolean;
 	    server_public_host: string;
 	    xray_log_level: string;
 	    enable_traffic_stats: boolean;
@@ -1110,6 +1302,9 @@ export namespace apiclient {
 	        this.panel_title = source["panel_title"];
 	        this.sub_domain = source["sub_domain"];
 	        this.sub_path = source["sub_path"];
+	        this.sub_nginx_enabled = source["sub_nginx_enabled"];
+	        this.api_domain = source["api_domain"];
+	        this.api_nginx_enabled = source["api_nginx_enabled"];
 	        this.server_public_host = source["server_public_host"];
 	        this.xray_log_level = source["xray_log_level"];
 	        this.enable_traffic_stats = source["enable_traffic_stats"];
@@ -1120,6 +1315,30 @@ export namespace apiclient {
 	        this.monthly_net_baseline_sent = source["monthly_net_baseline_sent"];
 	        this.monthly_net_baseline_recv = source["monthly_net_baseline_recv"];
 	        this.monthly_net_baseline_month = source["monthly_net_baseline_month"];
+	    }
+	}
+	export class SubscriptionNginxResponse {
+	    enabled: boolean;
+	    domain: string;
+	    sub_path: string;
+	    config_path: string;
+	    matched_cert_domain: string;
+	    reloaded: boolean;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SubscriptionNginxResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.domain = source["domain"];
+	        this.sub_path = source["sub_path"];
+	        this.config_path = source["config_path"];
+	        this.matched_cert_domain = source["matched_cert_domain"];
+	        this.reloaded = source["reloaded"];
+	        this.message = source["message"];
 	    }
 	}
 	export class TokenDeleteResponse {
@@ -1174,6 +1393,9 @@ export namespace apiclient {
 	    panel_title?: string;
 	    sub_domain?: string;
 	    sub_path?: string;
+	    sub_nginx_enabled?: boolean;
+	    api_domain?: string;
+	    api_nginx_enabled?: boolean;
 	    server_public_host?: string;
 	    xray_log_level?: string;
 	    enable_traffic_stats?: boolean;
@@ -1191,6 +1413,9 @@ export namespace apiclient {
 	        this.panel_title = source["panel_title"];
 	        this.sub_domain = source["sub_domain"];
 	        this.sub_path = source["sub_path"];
+	        this.sub_nginx_enabled = source["sub_nginx_enabled"];
+	        this.api_domain = source["api_domain"];
+	        this.api_nginx_enabled = source["api_nginx_enabled"];
 	        this.server_public_host = source["server_public_host"];
 	        this.xray_log_level = source["xray_log_level"];
 	        this.enable_traffic_stats = source["enable_traffic_stats"];
@@ -1270,6 +1495,26 @@ export namespace apiclient {
 	        this.enable_nat = source["enable_nat"];
 	        this.post_up = source["post_up"];
 	        this.post_down = source["post_down"];
+	        this.enabled = source["enabled"];
+	    }
+	}
+	export class UploadCertRequest {
+	    domain: string;
+	    type?: string;
+	    cert_pem: string;
+	    key_pem: string;
+	    enabled?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UploadCertRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = source["domain"];
+	        this.type = source["type"];
+	        this.cert_pem = source["cert_pem"];
+	        this.key_pem = source["key_pem"];
 	        this.enabled = source["enabled"];
 	    }
 	}

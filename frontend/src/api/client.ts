@@ -1,5 +1,9 @@
 import type {
+  APINginxResponse,
   APITokenDTO,
+  CFTunnelActionResponse,
+  CFTunnelInstallResponse,
+  CFTunnelStatus,
   CreateTokenRequest,
   CreateTokenResponse,
   CreateUserRequest,
@@ -12,6 +16,8 @@ import type {
   InboundDTO,
   InboundListResponse,
   InboundWGClientConfigResponse,
+  IssueCertRequest,
+  IssueCertResponse,
   LogsResponse,
   OutboundDTO,
   OutboundListResponse,
@@ -22,11 +28,13 @@ import type {
   ScanCertificatesResponse,
   ScanImportCertificatesResponse,
   SettingsDTO,
+  SubscriptionNginxResponse,
   TokenDeleteResponse,
   TokenListResponse,
   UpdateSettingsRequest,
   UpdateUserRequest,
   UpdateWGServerRequest,
+  UploadCertRequest,
   UpsertDomainRequest,
   UpsertInboundRequest,
   UpsertOutboundRequest,
@@ -168,6 +176,8 @@ interface WailsAppBinding {
   ScanCerts(): Promise<ScanCertificatesResponse>
   ScanImportCerts(): Promise<ScanImportCertificatesResponse>
   ImportSingleCert(req: ImportCertRequest): Promise<DomainDTO>
+  UploadDomainCert(req: UploadCertRequest): Promise<DomainDTO>
+  IssueDomainCert(req: IssueCertRequest): Promise<IssueCertResponse>
 
   GetWGStatus(): Promise<WGServiceStatus>
   SetupWGEnv(): Promise<WGSetupEnvResponse>
@@ -190,6 +200,14 @@ interface WailsAppBinding {
   UpdateSettings(req: UpdateSettingsRequest): Promise<SettingsDTO>
   RestartPanelAndReconnect(): Promise<ConnectionStatus>
   GetLogs(serviceName: string, lines: number): Promise<LogsResponse>
+  ApplySubscriptionNginx(): Promise<SubscriptionNginxResponse>
+  DisableSubscriptionNginx(): Promise<SubscriptionNginxResponse>
+  ApplyAPINginx(): Promise<APINginxResponse>
+  DisableAPINginx(): Promise<APINginxResponse>
+  GetCFTunnelStatus(): Promise<CFTunnelStatus>
+  InstallCFTunnel(): Promise<CFTunnelInstallResponse>
+  SetupCFTunnel(tunnelToken: string): Promise<CFTunnelActionResponse>
+  CFTunnelServiceAction(action: string): Promise<CFTunnelActionResponse>
 }
 
 declare global {
@@ -296,6 +314,8 @@ export const desktopApi = {
   scanCerts: () => getApp().ScanCerts(),
   scanImportCerts: () => getApp().ScanImportCerts(),
   importSingleCert: (req: ImportCertRequest) => getApp().ImportSingleCert(req),
+  uploadDomainCert: (req: UploadCertRequest) => getApp().UploadDomainCert(req),
+  issueDomainCert: (req: IssueCertRequest) => getApp().IssueDomainCert(req),
 
   getWGStatus: () => getApp().GetWGStatus(),
   setupWGEnv: () => getApp().SetupWGEnv(),
@@ -317,7 +337,17 @@ export const desktopApi = {
   getSettings: () => getApp().GetSettings(),
   updateSettings: (req: UpdateSettingsRequest) => getApp().UpdateSettings(req),
   restartPanelAndReconnect: () => getApp().RestartPanelAndReconnect(),
-  getLogs: (serviceName: string, lines: number) => getApp().GetLogs(serviceName, lines)
+  getLogs: (serviceName: string, lines: number) => getApp().GetLogs(serviceName, lines),
+
+  applySubscriptionNginx: () => getApp().ApplySubscriptionNginx(),
+  disableSubscriptionNginx: () => getApp().DisableSubscriptionNginx(),
+  applyAPINginx: () => getApp().ApplyAPINginx(),
+  disableAPINginx: () => getApp().DisableAPINginx(),
+  getCFTunnelStatus: () => getApp().GetCFTunnelStatus(),
+  installCFTunnel: () => getApp().InstallCFTunnel(),
+  setupCFTunnel: (tunnelToken: string) => getApp().SetupCFTunnel(tunnelToken),
+  cfTunnelServiceAction: (action: 'start' | 'stop' | 'restart' | 'uninstall') =>
+    getApp().CFTunnelServiceAction(action)
 }
 
 export type { APITokenDTO }

@@ -43,11 +43,15 @@ func (a *App) shutdown(ctx context.Context) {
 }
 
 func (a *App) callCtx() (context.Context, context.CancelFunc) {
+	return a.timeoutCtx(25 * time.Second)
+}
+
+func (a *App) timeoutCtx(d time.Duration) (context.Context, context.CancelFunc) {
 	base := a.ctx
 	if base == nil {
 		base = context.Background()
 	}
-	return context.WithTimeout(base, 25*time.Second)
+	return context.WithTimeout(base, d)
 }
 
 func (a *App) client() (*apiclient.Client, error) {
@@ -545,6 +549,26 @@ func (a *App) ImportSingleCert(req apiclient.ImportCertRequest) (apiclient.Domai
 	return c.ImportSingleCert(ctx, req)
 }
 
+func (a *App) UploadDomainCert(req apiclient.UploadCertRequest) (apiclient.DomainDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.DomainDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.UploadDomainCert(ctx, req)
+}
+
+func (a *App) IssueDomainCert(req apiclient.IssueCertRequest) (apiclient.IssueCertResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.IssueCertResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(180 * time.Second)
+	defer cancel()
+	return c.IssueDomainCert(ctx, req)
+}
+
 // ===== WireGuard =====
 
 func (a *App) GetWGStatus() (apiclient.WGServiceStatus, error) {
@@ -751,4 +775,86 @@ func (a *App) GetLogs(serviceName string, lines int) (apiclient.LogsResponse, er
 	ctx, cancel := a.callCtx()
 	defer cancel()
 	return c.GetLogs(ctx, serviceName, lines)
+}
+
+// ===== Subscription Nginx & Cloudflare Tunnel =====
+
+func (a *App) ApplySubscriptionNginx() (apiclient.SubscriptionNginxResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SubscriptionNginxResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.ApplySubscriptionNginx(ctx)
+}
+
+func (a *App) DisableSubscriptionNginx() (apiclient.SubscriptionNginxResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SubscriptionNginxResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.DisableSubscriptionNginx(ctx)
+}
+
+func (a *App) ApplyAPINginx() (apiclient.APINginxResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.APINginxResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.ApplyAPINginx(ctx)
+}
+
+func (a *App) DisableAPINginx() (apiclient.APINginxResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.APINginxResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.DisableAPINginx(ctx)
+}
+
+func (a *App) GetCFTunnelStatus() (apiclient.CFTunnelStatus, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.CFTunnelStatus{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetCFTunnelStatus(ctx)
+}
+
+func (a *App) InstallCFTunnel() (apiclient.CFTunnelInstallResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.CFTunnelInstallResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(120 * time.Second)
+	defer cancel()
+	return c.InstallCFTunnel(ctx)
+}
+
+func (a *App) SetupCFTunnel(tunnelToken string) (apiclient.CFTunnelActionResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.CFTunnelActionResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(60 * time.Second)
+	defer cancel()
+	return c.SetupCFTunnel(ctx, tunnelToken)
+}
+
+func (a *App) CFTunnelServiceAction(action string) (apiclient.CFTunnelActionResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.CFTunnelActionResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.CFTunnelServiceAction(ctx, action)
 }

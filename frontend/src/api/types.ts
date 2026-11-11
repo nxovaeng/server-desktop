@@ -521,6 +521,38 @@ export interface ImportCertRequest {
   key_path: string
 }
 
+export interface UploadCertRequest {
+  domain: string
+  type?: 'direct' | 'cdn'
+  cert_pem: string
+  key_pem: string
+  enabled?: boolean | null
+}
+
+export interface IssueCertRequest {
+  domain: string
+  include_wildcard?: boolean
+  type?: 'direct' | 'cdn'
+  provider: 'cf' | 'luadns'
+  cf_token?: string
+  cf_key?: string
+  cf_email?: string
+  cf_zone_id?: string
+  lua_key?: string
+  lua_email?: string
+  ca_server?: 'letsencrypt' | 'zerossl'
+  email?: string
+  force?: boolean
+}
+
+export interface IssueCertResponse {
+  domain: DomainDTO
+  provider: string
+  ca_server: string
+  reused_existing: boolean
+  output: string
+}
+
 export interface WGServiceStatus {
   is_linux: boolean
   is_installed: boolean
@@ -663,6 +695,9 @@ export interface SettingsDTO {
   panel_title: string
   sub_domain: string
   sub_path: string
+  sub_nginx_enabled: boolean
+  api_domain: string
+  api_nginx_enabled: boolean
   server_public_host: string
   xray_log_level: XrayLogLevel
   enable_traffic_stats: boolean
@@ -679,6 +714,9 @@ export interface UpdateSettingsRequest {
   panel_title?: string | null
   sub_domain?: string | null
   sub_path?: string | null
+  sub_nginx_enabled?: boolean | null
+  api_domain?: string | null
+  api_nginx_enabled?: boolean | null
   server_public_host?: string | null
   xray_log_level?: XrayLogLevel | null
   enable_traffic_stats?: boolean | null
@@ -686,6 +724,56 @@ export interface UpdateSettingsRequest {
   default_traffic_limit?: number | null
   default_expire_days?: number | null
   direct_domain_strategy?: DirectDomainStrategy | null
+}
+
+export interface SubscriptionNginxResponse {
+  enabled: boolean
+  domain: string
+  sub_path: string
+  config_path: string
+  matched_cert_domain: string
+  reloaded: boolean
+  message: string
+}
+
+export interface APINginxResponse {
+  enabled: boolean
+  domain: string
+  direct_url: string
+  config_path: string
+  matched_cert_domain: string
+  reloaded: boolean
+  message: string
+}
+
+export interface CFTunnelStatus {
+  is_linux: boolean
+  installed: boolean
+  binary_path: string
+  version: string
+  service_installed: boolean
+  active: boolean
+  enabled: boolean
+  status: string
+  panel_listen: string
+  sub_domain: string
+  sub_path: string
+  recommended_service: string
+  recommended_path_rule: string
+}
+
+export interface CFTunnelInstallResponse {
+  installed: boolean
+  binary_path: string
+  version: string
+  message: string
+}
+
+export interface CFTunnelActionResponse {
+  action: string
+  success: boolean
+  status: CFTunnelStatus
+  message: string
 }
 
 export interface PanelRestartResponse {

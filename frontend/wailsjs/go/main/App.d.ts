@@ -6,7 +6,13 @@ import {local} from '../models';
 import {main} from '../models';
 import {store} from '../models';
 
+export function ApplyAPINginx():Promise<apiclient.APINginxResponse>;
+
+export function ApplySubscriptionNginx():Promise<apiclient.SubscriptionNginxResponse>;
+
 export function ApplyXrayConfig(arg1:boolean):Promise<apiclient.XrayApplyResponse>;
+
+export function CFTunnelServiceAction(arg1:string):Promise<apiclient.CFTunnelActionResponse>;
 
 export function ConnectProfile(arg1:string,arg2:boolean):Promise<session.ConnectionStatus>;
 
@@ -42,6 +48,10 @@ export function DeleteWGPeer(arg1:number):Promise<apiclient.DeleteResponse>;
 
 export function DeriveLocalWGPublicKey(arg1:string):Promise<string>;
 
+export function DisableAPINginx():Promise<apiclient.APINginxResponse>;
+
+export function DisableSubscriptionNginx():Promise<apiclient.SubscriptionNginxResponse>;
+
 export function Disconnect():Promise<void>;
 
 export function ExportWGPeerConfig(arg1:number):Promise<apiclient.WGPeerExportConfigResponse>;
@@ -51,6 +61,8 @@ export function GenerateLocalWGKeys():Promise<local.WGKeyPair>;
 export function GenerateOutboundWGKeys():Promise<apiclient.WGKeyPair>;
 
 export function GenerateWGKeys():Promise<apiclient.WGKeyPair>;
+
+export function GetCFTunnelStatus():Promise<apiclient.CFTunnelStatus>;
 
 export function GetConnectionStatus():Promise<session.ConnectionStatus>;
 
@@ -77,6 +89,10 @@ export function ImportOutbound(arg1:string):Promise<apiclient.OutboundDTO>;
 export function ImportRoutingPreset(arg1:string):Promise<apiclient.ImportPresetResponse>;
 
 export function ImportSingleCert(arg1:apiclient.ImportCertRequest):Promise<apiclient.DomainDTO>;
+
+export function InstallCFTunnel():Promise<apiclient.CFTunnelInstallResponse>;
+
+export function IssueDomainCert(arg1:apiclient.IssueCertRequest):Promise<apiclient.IssueCertResponse>;
 
 export function ListDomains():Promise<apiclient.DomainListResponse>;
 
@@ -110,6 +126,8 @@ export function ScanCerts():Promise<apiclient.ScanCertificatesResponse>;
 
 export function ScanImportCerts():Promise<apiclient.ScanImportCertificatesResponse>;
 
+export function SetupCFTunnel(arg1:string):Promise<apiclient.CFTunnelActionResponse>;
+
 export function SetupWGEnv():Promise<apiclient.WGSetupEnvResponse>;
 
 export function TestLatency():Promise<number>;
@@ -141,6 +159,8 @@ export function UpdateUser(arg1:string,arg2:apiclient.UpdateUserRequest):Promise
 export function UpdateWGPeer(arg1:number,arg2:apiclient.UpsertWGPeerRequest):Promise<apiclient.WGPeerDTO>;
 
 export function UpdateWGServer(arg1:apiclient.UpdateWGServerRequest):Promise<apiclient.WGServerConfigDTO>;
+
+export function UploadDomainCert(arg1:apiclient.UploadCertRequest):Promise<apiclient.DomainDTO>;
 
 export function ValidateDirectURL(arg1:string):Promise<local.URLCheckResult>;
 

@@ -54,7 +54,7 @@ func NewClient(baseURL, token string, dialCtx DialContextFunc) *Client {
 		token:   strings.TrimSpace(token),
 		httpClient: &http.Client{
 			Transport: transport,
-			Timeout:   20 * time.Second,
+			Timeout:   180 * time.Second,
 		},
 	}
 }
@@ -326,6 +326,12 @@ func (c *Client) ScanImportCerts(ctx context.Context) (ScanImportCertificatesRes
 func (c *Client) ImportSingleCert(ctx context.Context, req ImportCertRequest) (DomainDTO, error) {
 	return doEnvelope[DomainDTO](ctx, c, http.MethodPost, "/api/v1/domains/import-cert", req)
 }
+func (c *Client) UploadDomainCert(ctx context.Context, req UploadCertRequest) (DomainDTO, error) {
+	return doEnvelope[DomainDTO](ctx, c, http.MethodPost, "/api/v1/domains/upload-cert", req)
+}
+func (c *Client) IssueDomainCert(ctx context.Context, req IssueCertRequest) (IssueCertResponse, error) {
+	return doEnvelope[IssueCertResponse](ctx, c, http.MethodPost, "/api/v1/domains/issue-cert", req)
+}
 
 // WireGuard
 func (c *Client) GetWGStatus(ctx context.Context) (WGServiceStatus, error) {
@@ -397,4 +403,30 @@ func (c *Client) RestartPanel(ctx context.Context) (PanelRestartResponse, error)
 func (c *Client) GetLogs(ctx context.Context, service string, lines int) (LogsResponse, error) {
 	path := fmt.Sprintf("/api/v1/logs?service=%s&lines=%d", url.QueryEscape(service), lines)
 	return doEnvelope[LogsResponse](ctx, c, http.MethodGet, path, nil)
+}
+
+// Subscription & API Nginx and Cloudflare Tunnel
+func (c *Client) ApplySubscriptionNginx(ctx context.Context) (SubscriptionNginxResponse, error) {
+	return doEnvelope[SubscriptionNginxResponse](ctx, c, http.MethodPost, "/api/v1/subscription/nginx", nil)
+}
+func (c *Client) DisableSubscriptionNginx(ctx context.Context) (SubscriptionNginxResponse, error) {
+	return doEnvelope[SubscriptionNginxResponse](ctx, c, http.MethodDelete, "/api/v1/subscription/nginx", nil)
+}
+func (c *Client) ApplyAPINginx(ctx context.Context) (APINginxResponse, error) {
+	return doEnvelope[APINginxResponse](ctx, c, http.MethodPost, "/api/v1/panel/nginx", nil)
+}
+func (c *Client) DisableAPINginx(ctx context.Context) (APINginxResponse, error) {
+	return doEnvelope[APINginxResponse](ctx, c, http.MethodDelete, "/api/v1/panel/nginx", nil)
+}
+func (c *Client) GetCFTunnelStatus(ctx context.Context) (CFTunnelStatus, error) {
+	return doEnvelope[CFTunnelStatus](ctx, c, http.MethodGet, "/api/v1/tunnels/cf/status", nil)
+}
+func (c *Client) InstallCFTunnel(ctx context.Context) (CFTunnelInstallResponse, error) {
+	return doEnvelope[CFTunnelInstallResponse](ctx, c, http.MethodPost, "/api/v1/tunnels/cf/install", nil)
+}
+func (c *Client) SetupCFTunnel(ctx context.Context, token string) (CFTunnelActionResponse, error) {
+	return doEnvelope[CFTunnelActionResponse](ctx, c, http.MethodPost, "/api/v1/tunnels/cf/setup", CFTunnelSetupRequest{TunnelToken: token})
+}
+func (c *Client) CFTunnelServiceAction(ctx context.Context, action string) (CFTunnelActionResponse, error) {
+	return doEnvelope[CFTunnelActionResponse](ctx, c, http.MethodPost, "/api/v1/tunnels/cf/service/"+url.PathEscape(action), nil)
 }
