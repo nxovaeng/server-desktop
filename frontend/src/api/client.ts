@@ -110,6 +110,14 @@ export interface ConnectionStatus {
   warning?: string
 }
 
+export interface BackendUpdateResult {
+  success: boolean
+  exit_code: number
+  output: string
+  error?: string
+  status: ConnectionStatus
+}
+
 export interface URLCheckResult {
   normalized_url: string
   is_plaintext_http: boolean
@@ -205,6 +213,7 @@ interface WailsAppBinding {
   GetSettings(): Promise<SettingsDTO>
   UpdateSettings(req: UpdateSettingsRequest): Promise<SettingsDTO>
   RestartPanelAndReconnect(): Promise<ConnectionStatus>
+  UpdateBackendViaSSH(): Promise<BackendUpdateResult>
   GetLogs(serviceName: string, lines: number): Promise<LogsResponse>
   ApplySubscriptionNginx(): Promise<SubscriptionNginxResponse>
   DisableSubscriptionNginx(): Promise<SubscriptionNginxResponse>
@@ -382,6 +391,7 @@ const rawDesktopApi = {
   getSettings: () => getApp().GetSettings(),
   updateSettings: (req: UpdateSettingsRequest) => getApp().UpdateSettings(req),
   restartPanelAndReconnect: () => getApp().RestartPanelAndReconnect(),
+  updateBackendViaSSH: () => getApp().UpdateBackendViaSSH(),
   getLogs: (serviceName: string, lines: number) => getApp().GetLogs(serviceName, lines),
 
   applySubscriptionNginx: () => getApp().ApplySubscriptionNginx(),

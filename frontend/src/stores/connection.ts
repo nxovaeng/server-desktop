@@ -150,6 +150,19 @@ export const useConnectionStore = defineStore('connection', {
       }
     },
 
+    async updateBackendViaSSH() {
+      this.connecting = true
+      try {
+        const res = await desktopApi.updateBackendViaSSH()
+        if (res.status?.profile_id) {
+          this.status = res.status
+        }
+        return res
+      } finally {
+        this.connecting = false
+      }
+    },
+
     async getGeoData(force = false): Promise<GeoDataInfo> {
       const pid = this.status.profile_id
       if (!force && pid && this.geoDataCache.has(pid)) {

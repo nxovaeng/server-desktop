@@ -827,6 +827,12 @@ func (a *App) RestartPanelAndReconnect() (*session.ConnectionStatus, error) {
 	return a.session.RestartPanelAndReconnect(ctx)
 }
 
+func (a *App) UpdateBackendViaSSH() (*session.BackendUpdateResult, error) {
+	ctx, cancel := a.timeoutCtx(120 * time.Second)
+	defer cancel()
+	return a.session.UpdateBackendViaSSH(ctx)
+}
+
 func (a *App) GetLogs(serviceName string, lines int) (apiclient.LogsResponse, error) {
 	c, err := a.client()
 	if err != nil {

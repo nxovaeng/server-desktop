@@ -156,6 +156,8 @@ export function ToggleUser(arg1:string):Promise<apiclient.UserDTO>;
 
 export function ToggleWGPeer(arg1:number):Promise<apiclient.WGPeerDTO>;
 
+export function UpdateBackendViaSSH():Promise<session.BackendUpdateResult>;
+
 export function UpdateDomain(arg1:string,arg2:apiclient.UpsertDomainRequest):Promise<apiclient.DomainDTO>;
 
 export function UpdateInbound(arg1:string,arg2:apiclient.UpsertInboundRequest):Promise<apiclient.InboundDTO>;

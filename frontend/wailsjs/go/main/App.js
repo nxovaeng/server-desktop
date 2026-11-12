@@ -302,6 +302,10 @@ export function ToggleWGPeer(arg1) {
   return window['go']['main']['App']['ToggleWGPeer'](arg1);
 }
 
+export function UpdateBackendViaSSH() {
+  return window['go']['main']['App']['UpdateBackendViaSSH']();
+}
+
 export function UpdateDomain(arg1, arg2) {
   return window['go']['main']['App']['UpdateDomain'](arg1, arg2);
 }

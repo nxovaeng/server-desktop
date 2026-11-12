@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -30,7 +31,13 @@ type directTCPIPData struct {
 	OriginPort uint32
 }
 
+type execHandler func(ctx context.Context, cmd string, stdout, stderr io.Writer) uint32
+
 func startMockSSHServer(t *testing.T, clientPub ssh.PublicKey) (addr string, hostFP string, closeFn func()) {
+	return startMockSSHServerWithExec(t, clientPub, nil)
+}
+
+func startMockSSHServerWithExec(t *testing.T, clientPub ssh.PublicKey, onExec execHandler) (addr string, hostFP string, closeFn func()) {
 	t.Helper()
 
 	_, hostPriv, err := ed25519.GenerateKey(rand.Reader)
@@ -95,34 +102,75 @@ func startMockSSHServer(t *testing.T, clientPub ssh.PublicKey) (addr string, hos
 				}()
 
 				for newChan := range chans {
-					if newChan.ChannelType() != "direct-tcpip" {
+					switch newChan.ChannelType() {
+					case "direct-tcpip":
+						var d directTCPIPData
+						if err := ssh.Unmarshal(newChan.ExtraData(), &d); err != nil {
+							_ = newChan.Reject(ssh.ConnectionFailed, err.Error())
+							continue
+						}
+						targetConn, err := net.Dial("tcp", net.JoinHostPort(d.DestAddr, strconv.Itoa(int(d.DestPort))))
+						if err != nil {
+							_ = newChan.Reject(ssh.ConnectionFailed, err.Error())
+							continue
+						}
+						ch, chReqs, err := newChan.Accept()
+						if err != nil {
+							_ = targetConn.Close()
+							continue
+						}
+						go ssh.DiscardRequests(chReqs)
+						go func() {
+							_, _ = io.Copy(ch, targetConn)
+							_ = ch.CloseWrite()
+						}()
+						go func() {
+							_, _ = io.Copy(targetConn, ch)
+							_ = targetConn.Close()
+						}()
+
+					case "session":
+						if onExec == nil {
+							_ = newChan.Reject(ssh.UnknownChannelType, "session disabled")
+							continue
+						}
+						ch, chReqs, err := newChan.Accept()
+						if err != nil {
+							continue
+						}
+						go func(channel ssh.Channel, inReqs <-chan *ssh.Request) {
+							defer channel.Close()
+							ctx, cancel := context.WithCancel(context.Background())
+							defer cancel()
+							for req := range inReqs {
+								if req.Type == "exec" {
+									var payload struct{ Command string }
+									if err := ssh.Unmarshal(req.Payload, &payload); err != nil {
+										if req.WantReply {
+											_ = req.Reply(false, nil)
+										}
+										continue
+									}
+									if req.WantReply {
+										_ = req.Reply(true, nil)
+									}
+									go func(cmd string) {
+										status := onExec(ctx, cmd, channel, channel.Stderr())
+										var exitMsg [4]byte
+										binary.BigEndian.PutUint32(exitMsg[:], status)
+										_, _ = channel.SendRequest("exit-status", false, exitMsg[:])
+										_ = channel.CloseWrite()
+										_ = channel.Close()
+									}(payload.Command)
+								} else if req.WantReply {
+									_ = req.Reply(false, nil)
+								}
+							}
+						}(ch, chReqs)
+
+					default:
 						_ = newChan.Reject(ssh.UnknownChannelType, "unsupported")
-						continue
 					}
-					var d directTCPIPData
-					if err := ssh.Unmarshal(newChan.ExtraData(), &d); err != nil {
-						_ = newChan.Reject(ssh.ConnectionFailed, err.Error())
-						continue
-					}
-					targetConn, err := net.Dial("tcp", net.JoinHostPort(d.DestAddr, strconv.Itoa(int(d.DestPort))))
-					if err != nil {
-						_ = newChan.Reject(ssh.ConnectionFailed, err.Error())
-						continue
-					}
-					ch, chReqs, err := newChan.Accept()
-					if err != nil {
-						_ = targetConn.Close()
-						continue
-					}
-					go ssh.DiscardRequests(chReqs)
-					go func() {
-						_, _ = io.Copy(ch, targetConn)
-						_ = ch.CloseWrite()
-					}()
-					go func() {
-						_, _ = io.Copy(targetConn, ch)
-						_ = targetConn.Close()
-					}()
 				}
 			}(rawConn)
 		}
@@ -314,5 +362,68 @@ func TestSSHTunnelKeyboardInteractive(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for wrong keyboard-interactive password")
+	}
+}
+
+func TestSSHTunnelRunCommand(t *testing.T) {
+	clientKeyPEM, clientPub := generateED25519KeyPEM(t)
+	sshAddr, _, stopSSH := startMockSSHServerWithExec(t, clientPub, func(ctx context.Context, cmd string, stdout, stderr io.Writer) uint32 {
+		switch cmd {
+		case "echo-ok":
+			_, _ = io.WriteString(stdout, "out-line\n")
+			_, _ = io.WriteString(stderr, "err-line\n")
+			return 0
+		case "fail-42":
+			_, _ = io.WriteString(stderr, "boom\n")
+			return 42
+		case "hang":
+			<-ctx.Done()
+			return 143
+		default:
+			return 1
+		}
+	})
+	defer stopSSH()
+
+	sshHost, sshPortStr, _ := net.SplitHostPort(sshAddr)
+	sshPort, _ := strconv.Atoi(sshPortStr)
+
+	tun, err := tunnel.Connect(tunnel.Config{
+		Host:              sshHost,
+		Port:              sshPort,
+		User:              "root",
+		AuthMethod:        tunnel.AuthKeyPEM,
+		KeyPEM:            clientKeyPEM,
+		TrustOnFirstUse:   true,
+		KeepaliveInterval: 500 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("tunnel.Connect: %v", err)
+	}
+	defer tun.Close()
+
+	// Empty command rejected
+	if _, _, err := tun.RunCommand(context.Background(), "   "); err == nil {
+		t.Fatal("expected error for empty command")
+	}
+
+	// Success output (stdout + stderr)
+	out, code, err := tun.RunCommand(context.Background(), "echo-ok")
+	if err != nil || code != 0 || !strings.Contains(out, "out-line") || !strings.Contains(out, "err-line") {
+		t.Fatalf("echo-ok unexpected: code=%d err=%v out=%q", code, err, out)
+	}
+
+	// Non-zero exit status preserved
+	out, code, err = tun.RunCommand(context.Background(), "fail-42")
+	if err == nil || code != 42 || !strings.Contains(out, "boom") {
+		t.Fatalf("fail-42 unexpected: code=%d err=%v out=%q", code, err, out)
+	}
+
+	// Context cancellation unblocks waiting command
+	cancelCtx, cancel := context.WithTimeout(context.Background(), 120*time.Millisecond)
+	defer cancel()
+	_, code, err = tun.RunCommand(cancelCtx, "hang")
+	if !errors.Is(err, context.DeadlineExceeded) || code != -1 {
+		t.Fatalf("expected context.DeadlineExceeded with code -1, got code=%d err=%v", code, err)
 	}
 }

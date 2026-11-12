@@ -150,6 +150,39 @@
                 确认远程重启 xray-panel-server？当前连接将短暂中断并自动重连。
               </n-popconfirm>
             </div>
+
+            <div class="pt-3 border-t border-white/10 space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="text-xs text-gray-400">
+                  经当前 SSH 隧道执行远端 <span class="mono">install.sh update</span> 在线更新后端 API（仅 SSH 隧道模式可用，非
+                  <span class="mono">root</span> 需免密 <span class="mono">sudo</span>）。
+                  <span v-if="conn.status.server_version" class="ml-1 text-gray-300">
+                    当前版本：<span class="mono text-emerald-400">v{{ conn.status.server_version }}</span>
+                  </span>
+                </div>
+                <n-popconfirm @positive-click="updateBackendViaSSH">
+                  <template #trigger>
+                    <n-button
+                      size="small"
+                      type="primary"
+                      secondary
+                      :disabled="!conn.status.connected || conn.status.mode !== 'ssh_tunnel' || updatingBackend"
+                      :loading="updatingBackend"
+                    >
+                      {{ conn.status.mode === 'ssh_tunnel' ? 'SSH 在线更新后端' : 'SSH 在线更新（需 SSH 隧道）' }}
+                    </n-button>
+                  </template>
+                  确认通过当前 SSH 隧道在线下载安装最新 xray-panel-server Release 并重启服务？
+                </n-popconfirm>
+              </div>
+              <div v-if="backendUpdateLog" class="space-y-1">
+                <div class="flex items-center justify-between text-[11px] text-gray-400">
+                  <span>远端 SSH 更新日志</span>
+                  <n-button size="tiny" quaternary @click="backendUpdateLog = ''">收起</n-button>
+                </div>
+                <pre class="p-2.5 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto max-h-56 whitespace-pre-wrap">{{ backendUpdateLog }}</pre>
+              </div>
+            </div>
           </div>
         </n-card>
 
@@ -398,6 +431,8 @@ const saving = ref(false)
 const applying = ref(false)
 const hotReloading = ref(false)
 const restartingXray = ref(false)
+const updatingBackend = ref(false)
+const backendUpdateLog = ref('')
 const loadingConfig = ref(false)
 const applyingSubNginx = ref(false)
 const disablingSubNginx = ref(false)
@@ -565,6 +600,32 @@ async function restartPanel() {
     await load()
   } catch (err) {
     message.error('重启或重连失败: ' + formatError(err))
+  }
+}
+
+async function updateBackendViaSSH() {
+  updatingBackend.value = true
+  backendUpdateLog.value = ''
+  try {
+    const res = await conn.updateBackendViaSSH()
+    backendUpdateLog.value = res.output || ''
+    if (!res.success) {
+      message.error(res.error || 'SSH 在线更新失败')
+      return
+    }
+    if (res.error) {
+      message.warning(res.error)
+    } else {
+      const ver = res.status?.server_version ? `v${res.status.server_version}` : '已刷新'
+      message.success(`后端 API 在线更新完成 (${ver} · ${res.status?.latency_ms ?? 0} ms)`)
+    }
+    if (res.status?.connected) {
+      await load()
+    }
+  } catch (err) {
+    message.error('SSH 在线更新失败: ' + formatError(err))
+  } finally {
+    updatingBackend.value = false
   }
 }
 

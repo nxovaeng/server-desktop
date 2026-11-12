@@ -192,6 +192,57 @@ func (t *Tunnel) DialContext(ctx context.Context, network, addr string) (net.Con
 	}
 }
 
+// RunCommand executes a non-interactive shell command over an SSH session channel on the
+// already-authenticated tunnel connection and returns combined stdout/stderr plus exit status.
+func (t *Tunnel) RunCommand(ctx context.Context, command string) (string, int, error) {
+	if strings.TrimSpace(command) == "" {
+		return "", -1, errors.New("remote command is required")
+	}
+
+	t.mu.RLock()
+	client := t.client
+	closed := t.closed
+	t.mu.RUnlock()
+
+	if closed || client == nil {
+		return "", -1, errors.New("ssh tunnel is closed")
+	}
+
+	sess, err := client.NewSession()
+	if err != nil {
+		return "", -1, fmt.Errorf("open ssh session failed: %w", err)
+	}
+	defer sess.Close()
+
+	type execRes struct {
+		out []byte
+		err error
+	}
+	ch := make(chan execRes, 1)
+	go func() {
+		out, runErr := sess.CombinedOutput(command)
+		ch <- execRes{out: out, err: runErr}
+	}()
+
+	select {
+	case <-ctx.Done():
+		_ = sess.Signal(ssh.SIGTERM)
+		_ = sess.Close()
+		r := <-ch
+		return string(r.out), -1, ctx.Err()
+	case r := <-ch:
+		outStr := string(r.out)
+		if r.err == nil {
+			return outStr, 0, nil
+		}
+		var exitErr *ssh.ExitError
+		if errors.As(r.err, &exitErr) {
+			return outStr, exitErr.ExitStatus(), r.err
+		}
+		return outStr, -1, r.err
+	}
+}
+
 // Fingerprint returns the remote server's SHA-256 SSH host key fingerprint.
 func (t *Tunnel) Fingerprint() string {
 	t.mu.RLock()
