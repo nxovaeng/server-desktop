@@ -8,7 +8,7 @@
     </div>
 
     <template v-if="data">
-      <n-grid :cols="4" :x-gap="14" :y-gap="14" responsive="screen" item-responsive>
+      <n-grid :cols="4" :x-gap="12" :y-gap="12" responsive="screen" item-responsive>
         <n-grid-item span="4 m:2 l:1">
           <n-card size="small" title="代理用户">
             <n-statistic :value="data.users.active">
@@ -20,17 +20,17 @@
           <n-card size="small" title="活跃入站 / 出站">
             <div class="text-2xl font-semibold">
               {{ data.inbounds.active }}/{{ data.inbounds.total }}
-              <span class="text-gray-400 text-sm mx-1">·</span>
+              <span class="text-muted text-sm mx-1">·</span>
               {{ data.outbounds.active }}/{{ data.outbounds.total }}
             </div>
           </n-card>
         </n-grid-item>
         <n-grid-item span="4 m:2 l:1">
           <n-card size="small" title="本月主机总流量">
-            <div class="text-2xl font-semibold text-emerald-400">
+            <div class="text-2xl font-semibold text-accent">
               {{ formatBytes(data.traffic.monthly_net_total_bytes) }}
             </div>
-            <div class="text-xs text-gray-400 mt-1">
+            <div class="text-xs text-muted mt-1">
               ↑ {{ formatBytes(data.traffic.monthly_net_sent_bytes) }} · ↓ {{ formatBytes(data.traffic.monthly_net_recv_bytes) }}
             </div>
           </n-card>
@@ -52,7 +52,7 @@
         </n-grid-item>
       </n-grid>
 
-      <n-grid :cols="3" :x-gap="14" :y-gap="14" responsive="screen" item-responsive>
+      <n-grid :cols="3" :x-gap="12" :y-gap="12" responsive="screen" item-responsive>
         <n-grid-item span="3 m:1">
           <n-card size="small" title="CPU 使用率">
             <n-progress
@@ -60,7 +60,7 @@
               :percentage="Number(data.system.cpu_usage_percent.toFixed(1))"
               indicator-placement="inside"
             />
-            <div class="text-xs text-gray-400 mt-2 truncate">
+            <div class="text-xs text-muted mt-2 truncate">
               {{ data.system.cpu_cores }} 核 · {{ data.system.cpu_model || 'CPU' }}
             </div>
           </n-card>
@@ -73,7 +73,7 @@
               status="info"
               indicator-placement="inside"
             />
-            <div class="text-xs text-gray-400 mt-2">
+            <div class="text-xs text-muted mt-2">
               {{ formatBytes(data.system.mem_used_bytes) }} / {{ formatBytes(data.system.mem_total_bytes) }}
             </div>
           </n-card>
@@ -86,7 +86,7 @@
               status="warning"
               indicator-placement="inside"
             />
-            <div class="text-xs text-gray-400 mt-2">
+            <div class="text-xs text-muted mt-2">
               {{ formatBytes(data.system.disk_used_bytes) }} / {{ formatBytes(data.system.disk_total_bytes) }}
             </div>
           </n-card>

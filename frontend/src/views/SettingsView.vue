@@ -75,19 +75,29 @@
 
         <div
           v-if="baselineInfo.month"
-          class="mt-2 pt-2 border-t border-white/10 text-xs text-gray-400 flex flex-wrap gap-4"
+          class="mt-2 pt-2 border-t border-subtle text-xs text-muted flex flex-wrap gap-4"
         >
-          <span>当月网卡基线月份：<span class="mono text-gray-200">{{ baselineInfo.month }}</span></span>
-          <span>Rx Baseline：<span class="mono text-gray-200">{{ formatBytes(Number(baselineInfo.recv) || 0) }}</span></span>
-          <span>Tx Baseline：<span class="mono text-gray-200">{{ formatBytes(Number(baselineInfo.sent) || 0) }}</span></span>
+          <span>当月网卡基线月份：<span class="mono text-strong">{{ baselineInfo.month }}</span></span>
+          <span>Rx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.recv) || 0) }}</span></span>
+          <span>Tx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.sent) || 0) }}</span></span>
         </div>
       </n-card>
 
       <div class="space-y-4">
+        <n-card title="外观主题" size="small">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="text-xs text-muted">仅影响本机客户端界面，偏好保存在本地，下次打开自动恢复。</div>
+            <n-radio-group :value="theme.mode" size="small" @update:value="(v: 'dark' | 'light') => theme.setMode(v)">
+              <n-radio-button value="dark">深色</n-radio-button>
+              <n-radio-button value="light">浅色</n-radio-button>
+            </n-radio-group>
+          </div>
+        </n-card>
+
         <n-card title="Xray 与面板进程控制" size="small">
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-300">
+              <div class="text-sm text-secondary">
                 Xray 服务状态：
                 <n-tag size="small" :type="xrayStatus?.active ? 'success' : 'error'">
                   {{ xrayStatus ? `${xrayStatus.active ? '运行中' : '未运行'} (${xrayStatus.status})` : '未知' }}
@@ -131,8 +141,8 @@
               </n-button>
             </div>
 
-            <div class="pt-3 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
-              <div class="text-xs text-gray-400">
+            <div class="pt-3 border-t border-subtle flex items-center justify-between flex-wrap gap-2">
+              <div class="text-xs text-muted">
                 远程重启 <span class="mono">xray-panel-server</span> 进程，客户端将自动等待并重建 SSH/API 连接。
               </div>
               <n-popconfirm @positive-click="restartPanel">
@@ -151,13 +161,13 @@
               </n-popconfirm>
             </div>
 
-            <div class="pt-3 border-t border-white/10 space-y-2">
+            <div class="pt-3 border-t border-subtle space-y-2">
               <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="text-xs text-gray-400">
+                <div class="text-xs text-muted">
                   经当前 SSH 隧道执行远端 <span class="mono">install.sh update</span> 在线更新后端 API（仅 SSH 隧道模式可用，非
                   <span class="mono">root</span> 需免密 <span class="mono">sudo</span>）。
-                  <span v-if="conn.status.server_version" class="ml-1 text-gray-300">
-                    当前版本：<span class="mono text-emerald-400">v{{ conn.status.server_version }}</span>
+                  <span v-if="conn.status.server_version" class="ml-1 text-secondary">
+                    当前版本：<span class="mono text-accent">v{{ conn.status.server_version }}</span>
                   </span>
                 </div>
                 <n-popconfirm @positive-click="updateBackendViaSSH">
@@ -176,11 +186,11 @@
                 </n-popconfirm>
               </div>
               <div v-if="backendUpdateLog" class="space-y-1">
-                <div class="flex items-center justify-between text-[11px] text-gray-400">
+                <div class="flex items-center justify-between text-[11px] text-muted">
                   <span>远端 SSH 更新日志</span>
                   <n-button size="tiny" quaternary @click="backendUpdateLog = ''">收起</n-button>
                 </div>
-                <pre class="p-2.5 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto max-h-56 whitespace-pre-wrap">{{ backendUpdateLog }}</pre>
+                <pre class="p-2.5 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-56 whitespace-pre-wrap">{{ backendUpdateLog }}</pre>
               </div>
             </div>
           </div>
@@ -202,9 +212,9 @@
           </template>
           <pre
             v-if="xrayRaw"
-            class="p-3 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto max-h-96"
+            class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-96"
           >{{ xrayRaw }}</pre>
-          <div v-else class="text-xs text-gray-400 py-4 text-center">
+          <div v-else class="text-xs text-muted py-4 text-center">
             点击右上角「生成预览」查看当前配置生成的 Xray config.json
           </div>
         </n-card>
@@ -220,9 +230,9 @@
                 <n-tag size="small" :type="form.api_nginx_enabled ? 'success' : 'default'">
                   {{ form.api_nginx_enabled ? 'API Nginx 反代：已启用' : 'API Nginx 反代：未启用' }}
                 </n-tag>
-                <span class="text-gray-300">
+                <span class="text-secondary">
                   直连地址：
-                  <span class="mono text-emerald-400">{{ form.api_domain ? `https://${form.api_domain}` : '(未填写 api_domain)' }}</span>
+                  <span class="mono text-accent">{{ form.api_domain ? `https://${form.api_domain}` : '(未填写 api_domain)' }}</span>
                 </span>
                 <n-button
                   v-if="form.api_domain"
@@ -260,7 +270,7 @@
             <n-alert type="info" size="small">
               生成仅放行 <span class="mono">/api/v1/</span> 的 Nginx HTTPS 反代（自动关闭 SSE 缓冲以支持实时日志，根路径 <span class="mono">/</span> 返回 404）；支持过 Cloudflare CDN（推荐上传 Cloudflare Origin CA 证书或签发 ACME 证书并设 SSL 为 <span class="mono">Full (Strict)</span>），开启后可在桌面端新增节点时选择「HTTPS / 本地直连」直接接入。如与订阅或入站共用同一域名，会自动合并于同一份 Nginx 站点配置。
             </n-alert>
-            <div v-if="apiNginxResult" class="p-2.5 rounded bg-black/40 border border-white/10 text-xs text-gray-300">
+            <div v-if="apiNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
               {{ apiNginxResult }}
             </div>
           </div>
@@ -273,9 +283,9 @@
                 <n-tag size="small" :type="form.sub_nginx_enabled ? 'success' : 'default'">
                   {{ form.sub_nginx_enabled ? '订阅 Nginx 反代：已启用' : '订阅 Nginx 反代：未启用' }}
                 </n-tag>
-                <span class="text-gray-300">
+                <span class="text-secondary">
                   当前目标：<span class="mono">{{ form.sub_domain || '(未填写 sub_domain)' }}</span> · 仅放行前缀
-                  <span class="mono text-emerald-400">{{ form.sub_path || '/d' }}/</span>
+                  <span class="mono text-accent">{{ form.sub_path || '/d' }}/</span>
                 </span>
               </div>
               <div class="flex gap-2">
@@ -305,7 +315,7 @@
             <n-alert type="info" size="small">
               仅代理 <span class="mono">{{ form.sub_path || '/d' }}/</span> 到面板回环地址（<span class="mono">/api/v1/*</span> 在公网访问返回 404）；会自动从「域名证书管理」中精确匹配或通配符匹配 TLS 证书。如订阅域名同时绑定了 Xray 入站，也会自动合并保留于同一份站点配置中。
             </n-alert>
-            <div v-if="subNginxResult" class="p-2.5 rounded bg-black/40 border border-white/10 text-xs text-gray-300">
+            <div v-if="subNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
               {{ subNginxResult }}
             </div>
           </div>
@@ -321,7 +331,7 @@
                 <n-tag size="small" :type="cfStatus?.active ? 'success' : 'warning'">
                   服务状态：{{ cfStatus?.status || '未知' }}
                 </n-tag>
-                <span v-if="cfStatus?.version" class="mono text-gray-400">{{ cfStatus.version }}</span>
+                <span v-if="cfStatus?.version" class="mono text-muted">{{ cfStatus.version }}</span>
               </div>
               <div class="flex gap-2 flex-wrap">
                 <n-button
@@ -392,20 +402,20 @@
               </n-popconfirm>
             </div>
 
-            <div v-if="cfStatus" class="p-3 rounded bg-black/40 border border-white/10 space-y-1.5 text-gray-300">
-              <div class="font-medium text-gray-200">Cloudflare Zero Trust 控制台 Public Hostname 推荐映射：</div>
+            <div v-if="cfStatus" class="p-3 rounded surface-code border border-subtle space-y-1.5 text-secondary">
+              <div class="font-medium text-strong">Cloudflare Zero Trust 控制台 Public Hostname 推荐映射：</div>
               <div class="flex flex-wrap gap-4">
-                <span>Subdomain / Domain：<span class="mono text-emerald-300">{{ form.sub_domain || 'sub.example.com' }}</span></span>
+                <span>Subdomain / Domain：<span class="mono text-accent">{{ form.sub_domain || 'sub.example.com' }}</span></span>
                 <span>
                   Path (强烈建议限制仅暴露订阅)：
-                  <span class="mono text-emerald-300">{{ cfStatus.recommended_path_rule }}</span>
+                  <span class="mono text-accent">{{ cfStatus.recommended_path_rule }}</span>
                 </span>
                 <span>
                   Service：
-                  <span class="mono text-emerald-300">{{ cfStatus.recommended_service }}</span>
+                  <span class="mono text-accent">{{ cfStatus.recommended_service }}</span>
                 </span>
               </div>
-              <div class="text-gray-400">
+              <div class="text-muted">
                 仅将 <span class="mono">{{ cfStatus.recommended_path_rule }}</span> 指向 <span class="mono">{{ cfStatus.recommended_service }}</span> 即可让客户端访问订阅链接，同时保证 <span class="mono">/api/v1/*</span> 不暴露在公网。
               </div>
             </div>
@@ -422,8 +432,10 @@ import { useMessage } from 'naive-ui'
 import { copyToClipboard, desktopApi, formatBytes, formatError } from '@/api/client'
 import type { CFTunnelStatus, DirectDomainStrategy, XrayLogLevel, XrayStatusResponse } from '@/api/types'
 import { useConnectionStore } from '@/stores/connection'
+import { useThemeStore } from '@/stores/theme'
 
 const conn = useConnectionStore()
+const theme = useThemeStore()
 const message = useMessage()
 
 const loading = ref(false)

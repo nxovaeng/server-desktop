@@ -4,12 +4,12 @@
       bordered
       collapse-mode="width"
       :collapsed-width="64"
-      :width="220"
+      :width="208"
       show-trigger
       v-model:collapsed="collapsed"
     >
-      <div class="h-14 flex items-center px-4 border-b border-white/10 font-semibold text-base tracking-wide truncate">
-        <ShieldCheck class="w-5 h-5 text-emerald-400 mr-2 shrink-0" />
+      <div class="h-14 flex items-center px-4 border-b border-subtle font-semibold text-base tracking-wide truncate">
+        <ShieldCheck class="w-5 h-5 text-accent mr-2 shrink-0" />
         <span v-if="!collapsed">{{ conn.status.panel_title || 'Xray Panel' }}</span>
       </div>
       <n-menu
@@ -67,6 +67,12 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
+          <n-button size="small" quaternary circle @click="theme.toggle()" :title="theme.isDark ? '切换到浅色' : '切换到深色'">
+            <template #icon>
+              <Sun v-if="theme.isDark" class="w-4 h-4" />
+              <Moon v-else class="w-4 h-4" />
+            </template>
+          </n-button>
           <n-tag v-if="conn.status.connected" type="success" size="small" round>
             {{ conn.status.mode === 'ssh_tunnel' ? 'SSH 隧道' : '直连' }} · {{ conn.status.token_name || 'token' }}
           </n-tag>
@@ -79,7 +85,7 @@
         </div>
       </n-layout-header>
 
-      <n-layout-content class="p-5 overflow-auto flex-1">
+      <n-layout-content class="p-4 overflow-auto flex-1">
         <n-alert
           v-if="conn.status.warning"
           type="warning"
@@ -100,7 +106,9 @@
           添加远程服务器。
         </n-alert>
 
-        <router-view :key="conn.status.profile_id || 'disconnected'" />
+        <div class="mx-auto w-full max-w-[1560px]">
+          <router-view :key="conn.status.profile_id || 'disconnected'" />
+        </div>
       </n-layout-content>
     </n-layout>
   </n-layout>
@@ -120,10 +128,10 @@
       <p>
         首次连接节点 <strong>{{ conn.tofuChallenge.profileName }}</strong>，请核对远程服务器 SSH 公钥 SHA-256 指纹：
       </p>
-      <div class="p-2.5 rounded bg-black/40 border border-white/10 mono text-xs break-all select-all">
+      <div class="p-2.5 surface-code mono text-xs break-all select-all">
         {{ conn.tofuChallenge.fingerprint }}
       </div>
-      <p class="text-xs text-gray-400">
+      <p class="text-xs text-muted">
         确认保存后，后续若主机密钥发生变更将自动拦截并告警，防止中间人攻击。
       </p>
     </div>
@@ -141,21 +149,25 @@ import {
   Globe,
   KeyRound,
   LayoutDashboard,
+  Moon,
   Network,
   Route as RouteIcon,
   Server,
   Settings,
   Shield,
   ShieldCheck,
+  Sun,
   Users
 } from 'lucide-vue-next'
 import { useConnectionStore } from '@/stores/connection'
+import { useThemeStore } from '@/stores/theme'
 import { formatError } from '@/api/client'
 
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
 const conn = useConnectionStore()
+const theme = useThemeStore()
 
 const collapsed = ref(false)
 const selectedProfileId = ref('')

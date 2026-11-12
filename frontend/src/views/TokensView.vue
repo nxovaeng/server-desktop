@@ -52,11 +52,11 @@
         <n-alert type="warning" size="small">
           请立即复制并保存下方 API Token！关闭弹窗后服务端仅保留哈希值，无法再次查看明文。
         </n-alert>
-        <div class="text-xs text-gray-400">
-          名称：<span class="text-gray-200 font-medium">{{ createdResp.token.name }}</span> · 过期时间：
+        <div class="text-xs text-muted">
+          名称：<span class="text-strong font-medium">{{ createdResp.token.name }}</span> · 过期时间：
           <span class="mono">{{ createdResp.token.expires_at ? createdResp.token.expires_at.slice(0, 10) : '永不过期' }}</span>
         </div>
-        <div class="p-3 rounded bg-black/50 border border-emerald-500/40 mono text-sm break-all select-all text-emerald-300">
+        <div class="p-3 rounded surface-code border border-subtle mono text-sm break-all select-all text-accent">
           {{ createdResp.plaintext_token }}
         </div>
         <div class="flex justify-end gap-2">
@@ -118,7 +118,7 @@ const columns: DataTableColumns<APITokenDTO> = [
     title: '前缀',
     key: 'token_prefix',
     width: 140,
-    render: (t) => h('span', { class: 'mono text-xs text-gray-300' }, `${t.token_prefix}...`)
+    render: (t) => h('span', { class: 'mono text-xs text-secondary' }, `${t.token_prefix}...`)
   },
   {
     title: '状态',

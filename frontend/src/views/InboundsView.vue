@@ -31,7 +31,7 @@
         <template v-if="form.protocol !== 'wireguard'">
           <n-form-item label="监听方式">
             <n-switch v-model:value="form.use_uds" />
-            <span class="text-xs text-gray-400 ml-2">{{ form.use_uds ? 'UDS 内存套接字 (推荐)' : 'TCP 本地端口' }}</span>
+            <span class="text-xs text-muted ml-2">{{ form.use_uds ? 'UDS 内存套接字 (推荐)' : 'TCP 本地端口' }}</span>
           </n-form-item>
           <n-form-item v-if="!form.use_uds" label="TCP 端口">
             <div class="flex gap-2 w-full">
@@ -122,10 +122,10 @@
 
     <n-modal v-model:show="showWGModal" preset="card" title="WireGuard 客户端配置参考" class="w-[560px]">
       <div v-if="wgClientCfg" class="space-y-3">
-        <div class="text-xs text-gray-400">
-          Endpoint：<span class="mono text-gray-200">{{ wgClientCfg.endpoint }}</span>
+        <div class="text-xs text-muted">
+          Endpoint：<span class="mono text-strong">{{ wgClientCfg.endpoint }}</span>
         </div>
-        <pre class="p-3 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto">{{ wgClientCfg.wg_conf }}</pre>
+        <pre class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto">{{ wgClientCfg.wg_conf }}</pre>
         <div class="flex justify-end">
           <n-button size="small" type="primary" @click="copyConf(wgClientCfg.wg_conf)">复制配置</n-button>
         </div>

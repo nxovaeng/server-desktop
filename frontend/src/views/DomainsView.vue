@@ -37,7 +37,7 @@
         </n-form-item>
         <n-form-item label="通配符证书">
           <n-switch v-model:value="form.is_wildcard" />
-          <span class="text-xs text-gray-400 ml-2">包含 *.example.com 泛解析</span>
+          <span class="text-xs text-muted ml-2">包含 *.example.com 泛解析</span>
         </n-form-item>
 
         <n-form-item label="证书路径 (Cert)" path="cert_path" required>
@@ -71,8 +71,8 @@
     <n-modal v-model:show="showScanModal" preset="card" title="扫描服务器证书" class="w-[760px]">
       <div v-if="scanResult" class="space-y-3">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <div class="text-xs text-gray-400">
-            扫描目录：<span class="mono text-gray-200">{{ scanResult.cert_dir }}</span> · 发现 {{ scanResult.count }} 组证书
+          <div class="text-xs text-muted">
+            扫描目录：<span class="mono text-strong">{{ scanResult.cert_dir }}</span> · 发现 {{ scanResult.count }} 组证书
           </div>
           <n-button
             size="small"
@@ -112,7 +112,7 @@
             <input
               type="file"
               accept=".pem,.cer,.crt,.txt"
-              class="text-xs text-gray-300"
+              class="text-xs text-secondary"
               @change="(e) => onPickPEMFile(e, 'cert')"
             />
             <n-input
@@ -130,7 +130,7 @@
             <input
               type="file"
               accept=".key,.pem,.txt"
-              class="text-xs text-gray-300"
+              class="text-xs text-secondary"
               @change="(e) => onPickPEMFile(e, 'key')"
             />
             <n-input
@@ -176,7 +176,7 @@
         <div class="grid grid-cols-2 gap-3">
           <n-form-item label="同时申请泛域名">
             <n-switch v-model:value="issueForm.include_wildcard" />
-            <span class="text-xs text-gray-400 ml-2">包含 *.域名</span>
+            <span class="text-xs text-muted ml-2">包含 *.域名</span>
           </n-form-item>
           <n-form-item label="强制重签">
             <n-switch v-model:value="issueForm.force" />
@@ -259,8 +259,8 @@
         </template>
 
         <div v-if="issueOutput" class="mt-2">
-          <div class="text-xs text-gray-400 mb-1">签发日志：</div>
-          <pre class="p-2.5 rounded bg-black/50 border border-white/10 mono text-xs max-h-40 overflow-auto whitespace-pre-wrap">{{ issueOutput }}</pre>
+          <div class="text-xs text-muted mb-1">签发日志：</div>
+          <pre class="p-2.5 rounded surface-code border border-subtle mono text-xs max-h-40 overflow-auto whitespace-pre-wrap">{{ issueOutput }}</pre>
         </div>
       </n-form>
 

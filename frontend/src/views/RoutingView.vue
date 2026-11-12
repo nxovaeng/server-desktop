@@ -16,7 +16,7 @@
     <n-card size="small" :bordered="true">
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs text-gray-400">快速导入预设：</span>
+          <span class="text-xs text-muted">快速导入预设：</span>
           <n-button
             size="tiny"
             secondary
@@ -96,7 +96,7 @@
               :rows="2"
               placeholder="逗号分隔，如: domain:google.com,full:example.com,keyword:ads"
             />
-            <div class="text-xs text-gray-400">支持 Xray 域名语法：domain: / full: / keyword: / regexp:，多个用英文逗号分隔</div>
+            <div class="text-xs text-muted">支持 Xray 域名语法：domain: / full: / keyword: / regexp:，多个用英文逗号分隔</div>
           </div>
         </n-form-item>
 
@@ -108,7 +108,7 @@
               :rows="2"
               placeholder="逗号分隔，如: 192.168.0.0/16,1.1.1.1"
             />
-            <div class="text-xs text-gray-400">支持单 IP 与 CIDR 网段，多个用英文逗号分隔</div>
+            <div class="text-xs text-muted">支持单 IP 与 CIDR 网段，多个用英文逗号分隔</div>
           </div>
         </n-form-item>
 
@@ -119,7 +119,7 @@
                 v-model:value="form.geosite_tags"
                 placeholder="逗号分隔，如: cn,geolocation-cn,category-ads-all"
               />
-              <div class="p-2.5 rounded bg-black/30 border border-white/10 space-y-2">
+              <div class="p-2.5 rounded surface-code border border-subtle space-y-2">
                 <div class="flex items-center justify-between gap-2">
                   <n-input
                     v-model:value="geoFilter"
@@ -128,7 +128,7 @@
                     placeholder="搜索 GeoSite 标签（点击添加到上方）..."
                     class="flex-1"
                   />
-                  <span class="text-xs text-gray-400 shrink-0">
+                  <span class="text-xs text-muted shrink-0">
                     匹配 {{ filteredGeoSiteTags.length }} / {{ availableGeoSiteTags.length }}
                   </span>
                 </div>
@@ -144,7 +144,7 @@
                   >
                     {{ tag }}
                   </n-tag>
-                  <span v-if="filteredGeoSiteTags.length > 120" class="text-xs text-gray-400 self-center">
+                  <span v-if="filteredGeoSiteTags.length > 120" class="text-xs text-muted self-center">
                     仅展示前 120 条，请输入关键词缩小范围
                   </span>
                 </div>
@@ -157,7 +157,7 @@
           <n-form-item label="GeoIP 代码" required>
             <div class="w-full space-y-2">
               <n-input v-model:value="form.geoip_codes" placeholder="逗号分隔，如: cn,private,us" />
-              <div class="p-2.5 rounded bg-black/30 border border-white/10 space-y-2">
+              <div class="p-2.5 rounded surface-code border border-subtle space-y-2">
                 <div class="flex items-center justify-between gap-2">
                   <n-input
                     v-model:value="geoFilter"
@@ -166,7 +166,7 @@
                     placeholder="搜索 GeoIP 国家/区域代码（点击添加到上方）..."
                     class="flex-1"
                   />
-                  <span class="text-xs text-gray-400 shrink-0">
+                  <span class="text-xs text-muted shrink-0">
                     匹配 {{ filteredGeoIPCodes.length }} / {{ availableGeoIPCodes.length }}
                   </span>
                 </div>

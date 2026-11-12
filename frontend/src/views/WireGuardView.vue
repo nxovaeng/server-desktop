@@ -52,21 +52,21 @@
           </n-tag>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs text-gray-300">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs text-secondary">
           <div>
-            <span class="text-gray-400">监听端口：</span>
+            <span class="text-muted">监听端口：</span>
             <span class="mono">{{ wgStatus.listen_port }}/udp</span>
           </div>
           <div>
-            <span class="text-gray-400">内网网段：</span>
+            <span class="text-muted">内网网段：</span>
             <span class="mono">{{ wgStatus.address }}</span>
           </div>
           <div>
-            <span class="text-gray-400">在线 Peer：</span>
+            <span class="text-muted">在线 Peer：</span>
             <span>{{ wgStatus.online_peers }} / {{ wgStatus.active_peers }} 启用 (共 {{ wgStatus.total_peers }})</span>
           </div>
           <div class="truncate" :title="wgStatus.public_key">
-            <span class="text-gray-400">服务端公钥：</span>
+            <span class="text-muted">服务端公钥：</span>
             <span class="mono">{{ wgStatus.public_key || '-' }}</span>
           </div>
         </div>
@@ -165,7 +165,7 @@
         </n-form-item>
         <n-form-item label="自动 NAT 伪装">
           <n-switch v-model:value="serverForm.enable_nat" />
-          <span class="text-xs text-gray-400 ml-2">开启后为流量转发配置 iptables MASQUERADE</span>
+          <span class="text-xs text-muted ml-2">开启后为流量转发配置 iptables MASQUERADE</span>
         </n-form-item>
         <n-form-item label="PostUp 脚本">
           <n-input v-model:value="serverForm.post_up" class="mono" placeholder="留空按 NAT 策略自动填充" />
@@ -249,9 +249,9 @@
 
     <n-modal v-model:show="showExportModal" preset="card" :title="`导出 Peer 配置 - ${exportCfg?.peer_name || ''}`" class="w-[660px]">
       <div v-if="exportCfg" class="space-y-3">
-        <div class="text-xs text-gray-400 flex flex-wrap gap-4">
-          <span>Server Host：<span class="mono text-gray-200">{{ exportCfg.server_host || '-' }}</span></span>
-          <span>Endpoint：<span class="mono text-gray-200">{{ exportCfg.endpoint || '-' }}</span></span>
+        <div class="text-xs text-muted flex flex-wrap gap-4">
+          <span>Server Host：<span class="mono text-strong">{{ exportCfg.server_host || '-' }}</span></span>
+          <span>Endpoint：<span class="mono text-strong">{{ exportCfg.endpoint || '-' }}</span></span>
         </div>
 
         <n-alert v-if="!exportCfg.has_private_key" type="warning" size="small">
@@ -261,7 +261,7 @@
         <n-tabs type="line" animated size="small">
           <n-tab-pane name="wg" tab="wg0.conf (标准 WireGuard)">
             <div class="space-y-2">
-              <pre class="p-3 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto max-h-72">{{ exportCfg.wg_conf }}</pre>
+              <pre class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-72">{{ exportCfg.wg_conf }}</pre>
               <div class="flex justify-end gap-2">
                 <n-button size="small" @click="exportToFile(`${exportCfg.peer_name}.conf`, exportCfg.wg_conf)">
                   保存 .conf 文件
@@ -274,7 +274,7 @@
           </n-tab-pane>
           <n-tab-pane name="xray" tab="Xray Outbound JSON">
             <div class="space-y-2">
-              <pre class="p-3 rounded bg-black/40 border border-white/10 mono text-xs overflow-auto max-h-72">{{ exportCfg.xray_json }}</pre>
+              <pre class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-72">{{ exportCfg.xray_json }}</pre>
               <div class="flex justify-end gap-2">
                 <n-button size="small" @click="exportToFile(`${exportCfg.peer_name}-xray.json`, exportCfg.xray_json)">
                   保存 .json 文件
@@ -374,8 +374,8 @@ const columns: DataTableColumns<WGPeerDTO> = [
         h(NTag, { size: 'tiny', type: rt?.is_online ? 'success' : 'default' }, () =>
           rt?.is_online ? '在线' : '离线'
         ),
-        h('span', { class: 'text-xs text-gray-300' }, rt?.handshake_ago || '从未握手'),
-        rt?.endpoint ? h('span', { class: 'mono text-xs text-gray-400' }, `(${rt.endpoint})`) : null
+        h('span', { class: 'text-xs text-secondary' }, rt?.handshake_ago || '从未握手'),
+        rt?.endpoint ? h('span', { class: 'mono text-xs text-muted' }, `(${rt.endpoint})`) : null
       ])
     }
   },

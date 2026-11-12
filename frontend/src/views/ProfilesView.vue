@@ -3,14 +3,14 @@
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-xl font-semibold">节点连接管理</h2>
-        <p class="text-xs text-gray-400 mt-0.5">
+        <p class="text-xs text-muted mt-0.5">
           敏感凭据（API Token、SSH 密码与私钥口令）均保存在系统 Keyring 中，本地配置文件仅存连接元数据。
         </p>
       </div>
       <n-button type="primary" @click="openCreate">新增节点 Profile</n-button>
     </div>
 
-    <n-grid :cols="2" :x-gap="16" :y-gap="16" responsive="screen" item-responsive>
+    <n-grid :cols="2" :x-gap="12" :y-gap="12" responsive="screen" item-responsive>
       <n-grid-item v-for="p in conn.profiles" :key="p.id" span="2 m:1">
         <n-card size="small" :title="p.name">
           <template #header-extra>
@@ -26,12 +26,12 @@
             </n-tag>
           </template>
 
-          <div class="space-y-1.5 text-xs text-gray-300">
+          <div class="space-y-1.5 text-xs text-secondary">
             <template v-if="p.mode === 'ssh_tunnel'">
               <div>SSH 目标：<span class="mono">{{ p.ssh_user }}@{{ p.ssh_host }}:{{ p.ssh_port }}</span></div>
               <div>远端服务：<span class="mono">{{ p.remote_bind_host }}:{{ p.remote_panel_port }}</span>（认证：{{ p.ssh_auth_type }}）</div>
               <div v-if="p.ssh_fingerprint" class="truncate">
-                TOFU 指纹：<span class="mono text-gray-400">{{ p.ssh_fingerprint }}</span>
+                TOFU 指纹：<span class="mono text-muted">{{ p.ssh_fingerprint }}</span>
               </div>
             </template>
             <template v-else>
@@ -151,7 +151,7 @@
           </n-form-item>
           <n-form-item label="允许明文 HTTP">
             <n-switch v-model:value="form.allow_insecure_http" />
-            <span class="text-xs text-gray-400 ml-2">仅建议测试环境开启，公网推荐 HTTPS 或 SSH 隧道</span>
+            <span class="text-xs text-muted ml-2">仅建议测试环境开启，公网推荐 HTTPS 或 SSH 隧道</span>
           </n-form-item>
         </template>
 

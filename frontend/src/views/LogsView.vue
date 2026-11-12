@@ -45,7 +45,7 @@
           class="w-48"
           placeholder="关键字过滤..."
         />
-        <div class="flex items-center gap-1.5 px-2 text-xs text-gray-300">
+        <div class="flex items-center gap-1.5 px-2 text-xs text-secondary">
           <n-switch v-model:value="autoRefresh" size="small" />
           <span>自动刷新 (3s)</span>
         </div>
@@ -60,16 +60,16 @@
     </div>
 
     <n-card size="small">
-      <div class="text-xs text-gray-400 mb-2 flex items-center justify-between">
+      <div class="text-xs text-muted mb-2 flex items-center justify-between">
         <span>
-          服务：<span class="mono text-gray-200">{{ service }}</span> · 显示
-          <span class="mono text-gray-200">{{ filteredLines.length }}</span> /
+          服务：<span class="mono text-strong">{{ service }}</span> · 显示
+          <span class="mono text-strong">{{ filteredLines.length }}</span> /
           <span class="mono">{{ totalLines }}</span> 行
         </span>
         <span v-if="lastUpdated" class="mono">最近拉取：{{ lastUpdated }}</span>
       </div>
       <pre
-        class="p-3 rounded bg-black/50 border border-white/10 mono text-xs overflow-auto h-[520px] whitespace-pre-wrap break-all leading-relaxed"
+        class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto h-[520px] whitespace-pre-wrap break-all leading-relaxed"
       >{{ filteredText || (loading ? '正在拉取日志...' : '暂无匹配日志内容') }}</pre>
     </n-card>
   </div>
