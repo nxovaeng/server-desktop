@@ -699,6 +699,7 @@ export interface SettingsDTO {
   default_traffic_limit: number
   default_expire_days: number
   direct_domain_strategy: DirectDomainStrategy
+  cn_ip_fallback: string
   monthly_net_baseline_sent: string
   monthly_net_baseline_recv: string
   monthly_net_baseline_month: string
@@ -718,6 +719,7 @@ export interface UpdateSettingsRequest {
   default_traffic_limit?: number | null
   default_expire_days?: number | null
   direct_domain_strategy?: DirectDomainStrategy | null
+  cn_ip_fallback?: string | null
 }
 
 export interface SubscriptionNginxResponse {

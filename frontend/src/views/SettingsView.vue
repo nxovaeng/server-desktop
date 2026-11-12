@@ -55,6 +55,10 @@
               ]"
             />
           </n-form-item>
+          <n-form-item label="CN IP 兜底出站">
+            <n-input v-model:value="form.cn_ip_fallback" placeholder="proton（留空关闭；填 block 则拦截 CN IP）" />
+            <template #feedback>未被用户规则命中的 CN IP 走这里：填出站 Tag（如指向 wireproxy 的 socks5 出站 proton）、block（没建 Proton 出站时直接拦截）、direct（直连）；留空则关闭此兜底。</template>
+          </n-form-item>
           <div class="grid grid-cols-2 gap-3">
             <n-form-item label="默认用户流量 (GB)">
               <n-input-number v-model:value="defaultLimitGB" :min="0" class="w-full" placeholder="0 = 无限" />
@@ -481,6 +485,7 @@ const form = reactive({
   server_public_host: '',
   xray_log_level: 'warning' as XrayLogLevel,
   direct_domain_strategy: 'UseIPv4' as DirectDomainStrategy,
+  cn_ip_fallback: 'proton',
   enable_traffic_stats: true,
   enable_sniffing: true,
   default_expire_days: 30
@@ -506,6 +511,7 @@ async function load() {
       server_public_host: settings.server_public_host,
       xray_log_level: settings.xray_log_level,
       direct_domain_strategy: settings.direct_domain_strategy,
+      cn_ip_fallback: settings.cn_ip_fallback ?? 'proton',
       enable_traffic_stats: settings.enable_traffic_stats,
       enable_sniffing: settings.enable_sniffing,
       default_expire_days: settings.default_expire_days
@@ -536,6 +542,7 @@ async function save() {
       server_public_host: form.server_public_host.trim(),
       xray_log_level: form.xray_log_level,
       direct_domain_strategy: form.direct_domain_strategy,
+      cn_ip_fallback: form.cn_ip_fallback.trim(),
       enable_traffic_stats: form.enable_traffic_stats,
       enable_sniffing: form.enable_sniffing,
       default_traffic_limit: Math.max(0, Math.round(defaultLimitGB.value || 0)) * 1024 * 1024 * 1024,

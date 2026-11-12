@@ -1279,6 +1279,7 @@ export namespace apiclient {
 	    default_traffic_limit: number;
 	    default_expire_days: number;
 	    direct_domain_strategy: string;
+	    cn_ip_fallback: string;
 	    monthly_net_baseline_sent: string;
 	    monthly_net_baseline_recv: string;
 	    monthly_net_baseline_month: string;
@@ -1302,6 +1303,7 @@ export namespace apiclient {
 	        this.default_traffic_limit = source["default_traffic_limit"];
 	        this.default_expire_days = source["default_expire_days"];
 	        this.direct_domain_strategy = source["direct_domain_strategy"];
+	        this.cn_ip_fallback = source["cn_ip_fallback"];
 	        this.monthly_net_baseline_sent = source["monthly_net_baseline_sent"];
 	        this.monthly_net_baseline_recv = source["monthly_net_baseline_recv"];
 	        this.monthly_net_baseline_month = source["monthly_net_baseline_month"];
@@ -1393,6 +1395,7 @@ export namespace apiclient {
 	    default_traffic_limit?: number;
 	    default_expire_days?: number;
 	    direct_domain_strategy?: string;
+	    cn_ip_fallback?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateSettingsRequest(source);
@@ -1413,6 +1416,7 @@ export namespace apiclient {
 	        this.default_traffic_limit = source["default_traffic_limit"];
 	        this.default_expire_days = source["default_expire_days"];
 	        this.direct_domain_strategy = source["direct_domain_strategy"];
+	        this.cn_ip_fallback = source["cn_ip_fallback"];
 	    }
 	}
 	export class UpdateUserRequest {
