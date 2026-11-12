@@ -135,6 +135,44 @@ export namespace apiclient {
 	        this.recommended_path_rule = source["recommended_path_rule"];
 	    }
 	}
+	export class SpeedtestStatus {
+	    enabled: boolean;
+	    domain: string;
+	    sub_path: string;
+	    file_exists: boolean;
+	    file_size: number;
+	    url: string;
+	    config_path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SpeedtestStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.domain = source["domain"];
+	        this.sub_path = source["sub_path"];
+	        this.file_exists = source["file_exists"];
+	        this.file_size = source["file_size"];
+	        this.url = source["url"];
+	        this.config_path = source["config_path"];
+	    }
+	}
+	export class UpdateSpeedtestRequest {
+	    domain?: string;
+	    sub_path?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateSpeedtestRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = source["domain"];
+	        this.sub_path = source["sub_path"];
+	    }
+	}
 	export class CFTunnelActionResponse {
 	    action: string;
 	    success: boolean;

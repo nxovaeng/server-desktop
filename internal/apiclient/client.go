@@ -427,6 +427,22 @@ func (c *Client) ApplyAPINginx(ctx context.Context) (APINginxResponse, error) {
 func (c *Client) DisableAPINginx(ctx context.Context) (APINginxResponse, error) {
 	return doEnvelope[APINginxResponse](ctx, c, http.MethodDelete, "/api/v1/panel/nginx", nil)
 }
+func (c *Client) GetSpeedtestStatus(ctx context.Context) (SpeedtestStatus, error) {
+	return doEnvelope[SpeedtestStatus](ctx, c, http.MethodGet, "/api/v1/speedtest", nil)
+}
+
+func (c *Client) UpdateSpeedtest(ctx context.Context, req UpdateSpeedtestRequest) (SpeedtestStatus, error) {
+	return doEnvelope[SpeedtestStatus](ctx, c, http.MethodPut, "/api/v1/speedtest", req)
+}
+
+func (c *Client) StartSpeedtest(ctx context.Context) (SpeedtestStatus, error) {
+	return doEnvelope[SpeedtestStatus](ctx, c, http.MethodPost, "/api/v1/speedtest/start", nil)
+}
+
+func (c *Client) StopSpeedtest(ctx context.Context) (SpeedtestStatus, error) {
+	return doEnvelope[SpeedtestStatus](ctx, c, http.MethodPost, "/api/v1/speedtest/stop", nil)
+}
+
 func (c *Client) GetCFTunnelStatus(ctx context.Context) (CFTunnelStatus, error) {
 	return doEnvelope[CFTunnelStatus](ctx, c, http.MethodGet, "/api/v1/tunnels/cf/status", nil)
 }

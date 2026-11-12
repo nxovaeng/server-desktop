@@ -762,6 +762,21 @@ type CFTunnelSetupRequest struct {
 	TunnelToken string `json:"tunnel_token"`
 }
 
+type SpeedtestStatus struct {
+	Enabled    bool   `json:"enabled"`
+	Domain     string `json:"domain"`
+	SubPath    string `json:"sub_path"`
+	FileExists bool   `json:"file_exists"`
+	FileSize   int64  `json:"file_size"`
+	URL        string `json:"url"`
+	ConfigPath string `json:"config_path"`
+}
+
+type UpdateSpeedtestRequest struct {
+	Domain  *string `json:"domain,omitempty"`
+	SubPath *string `json:"sub_path,omitempty"`
+}
+
 type CFTunnelInstallResponse struct {
 	Installed  bool   `json:"installed"`
 	BinaryPath string `json:"binary_path"`

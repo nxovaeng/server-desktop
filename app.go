@@ -885,6 +885,46 @@ func (a *App) DisableAPINginx() (apiclient.APINginxResponse, error) {
 	return c.DisableAPINginx(ctx)
 }
 
+func (a *App) GetSpeedtestStatus() (apiclient.SpeedtestStatus, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SpeedtestStatus{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetSpeedtestStatus(ctx)
+}
+
+func (a *App) UpdateSpeedtest(req apiclient.UpdateSpeedtestRequest) (apiclient.SpeedtestStatus, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SpeedtestStatus{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.UpdateSpeedtest(ctx, req)
+}
+
+func (a *App) StartSpeedtest() (apiclient.SpeedtestStatus, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SpeedtestStatus{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.StartSpeedtest(ctx)
+}
+
+func (a *App) StopSpeedtest() (apiclient.SpeedtestStatus, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.SpeedtestStatus{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.StopSpeedtest(ctx)
+}
+
 func (a *App) GetCFTunnelStatus() (apiclient.CFTunnelStatus, error) {
 	c, err := a.client()
 	if err != nil {

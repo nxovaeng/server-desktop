@@ -758,6 +758,21 @@ export interface CFTunnelStatus {
   recommended_path_rule: string
 }
 
+export interface SpeedtestStatus {
+  enabled: boolean
+  domain: string
+  sub_path: string
+  file_exists: boolean
+  file_size: number
+  url: string
+  config_path: string
+}
+
+export interface UpdateSpeedtestRequest {
+  domain?: string | null
+  sub_path?: string | null
+}
+
 export interface CFTunnelInstallResponse {
   installed: boolean
   binary_path: string

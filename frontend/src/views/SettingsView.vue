@@ -425,6 +425,69 @@
             </div>
           </div>
         </n-tab-pane>
+
+        <n-tab-pane name="speedtest" tab="测速源站 (优选 IP)">
+          <div class="space-y-3 text-xs">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <n-tag size="small" :type="speedtestStatus?.enabled ? 'success' : 'default'">
+                  {{ speedtestStatus?.enabled ? '测速源站已开启' : '测速源站已关闭' }}
+                </n-tag>
+                <span v-if="speedtestStatus?.file_exists" class="text-muted">
+                  测试文件 50MB（{{ formatBytes(speedtestStatus.file_size) }}）
+                </span>
+              </div>
+              <div class="flex gap-2 flex-wrap">
+                <n-button
+                  v-if="!speedtestStatus?.enabled"
+                  size="small"
+                  type="primary"
+                  :disabled="!conn.status.connected || !speedtestForm.domain.trim()"
+                  :loading="togglingSpeedtest"
+                  @click="startSpeedtest"
+                >
+                  启动测速源站
+                </n-button>
+                <n-button
+                  v-else
+                  size="small"
+                  type="warning"
+                  secondary
+                  :disabled="!conn.status.connected"
+                  :loading="togglingSpeedtest"
+                  @click="stopSpeedtest"
+                >
+                  停止测速源站
+                </n-button>
+                <n-button size="small" quaternary :disabled="!conn.status.connected" @click="refreshSpeedtest">
+                  刷新状态
+                </n-button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <n-form-item label="测速域名">
+                <n-input v-model:value="speedtestForm.domain" placeholder="jp-speed.example.com" />
+              </n-form-item>
+              <n-form-item label="Subpath（可改，避免地址被猜到刷流量）">
+                <n-input v-model:value="speedtestForm.sub_path" placeholder="/speedtest" />
+              </n-form-item>
+            </div>
+            <div class="flex gap-2">
+              <n-button size="small" type="primary" secondary :disabled="!conn.status.connected" :loading="savingSpeedtest" @click="saveSpeedtest">
+                保存域名与 Subpath
+              </n-button>
+            </div>
+
+            <div v-if="speedtestStatus?.enabled && speedtestStatus.url" class="p-2.5 rounded surface-code border border-subtle text-secondary">
+              <div>测速地址：<span class="mono text-accent">{{ speedtestStatus.url }}</span></div>
+              <div class="text-muted">把这个地址填进客户端优选脚本的 TEST_URL；测完记得点「停止测速源站」，避免地址暴露后被人刷流量。</div>
+            </div>
+            <n-alert type="info" size="small">
+              默认关闭：只在测速轮次里开启，测完即停。改 Subpath 会立即重写 nginx 配置并重载，旧地址随即失效。
+            </n-alert>
+          </div>
+        </n-tab-pane>
       </n-tabs>
     </n-card>
   </div>
@@ -434,7 +497,7 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import { copyToClipboard, desktopApi, formatBytes, formatError } from '@/api/client'
-import type { CFTunnelStatus, DirectDomainStrategy, XrayLogLevel, XrayStatusResponse } from '@/api/types'
+import type { CFTunnelStatus, DirectDomainStrategy, SpeedtestStatus, XrayLogLevel, XrayStatusResponse } from '@/api/types'
 import { useConnectionStore } from '@/stores/connection'
 import { useThemeStore } from '@/stores/theme'
 
@@ -458,6 +521,10 @@ const disablingAPINginx = ref(false)
 const apiNginxResult = ref('')
 
 const cfStatus = ref<CFTunnelStatus | null>(null)
+const speedtestStatus = ref<SpeedtestStatus | null>(null)
+const speedtestForm = reactive({ domain: '', sub_path: '/speedtest' })
+const savingSpeedtest = ref(false)
+const togglingSpeedtest = ref(false)
 const cfToken = ref('')
 const installingCF = ref(false)
 const settingUpCF = ref(false)
@@ -495,11 +562,12 @@ async function load() {
   if (!conn.status.connected) return
   loading.value = true
   try {
-    const [settings, st, cfg, cf] = await Promise.all([
+    const [settings, st, cfg, cf, sp] = await Promise.all([
       desktopApi.getSettings(),
       desktopApi.getXrayStatus(),
       desktopApi.getXrayConfig(),
-      desktopApi.getCFTunnelStatus()
+      desktopApi.getCFTunnelStatus(),
+      desktopApi.getSpeedtestStatus()
     ])
     Object.assign(form, {
       panel_title: settings.panel_title,
@@ -524,6 +592,9 @@ async function load() {
     xrayRaw.value = cfg.raw
     xrayDirty.value = cfg.current_hash !== undefined ? !!cfg.dirty : null
     cfStatus.value = cf
+    speedtestStatus.value = sp
+    speedtestForm.domain = sp.domain
+    speedtestForm.sub_path = sp.sub_path || '/speedtest'
   } catch (err) {
     message.error('加载设置失败: ' + formatError(err))
   } finally {
@@ -749,6 +820,55 @@ async function refreshCFStatus() {
     cfStatus.value = await desktopApi.getCFTunnelStatus()
   } catch (err) {
     message.error('查询 cloudflared 状态失败: ' + formatError(err))
+  }
+}
+
+async function refreshSpeedtest() {
+  try {
+    speedtestStatus.value = await desktopApi.getSpeedtestStatus()
+    speedtestForm.domain = speedtestStatus.value.domain
+    speedtestForm.sub_path = speedtestStatus.value.sub_path || '/speedtest'
+  } catch (err) {
+    message.error('查询测速源站状态失败: ' + formatError(err))
+  }
+}
+
+async function saveSpeedtest() {
+  savingSpeedtest.value = true
+  try {
+    speedtestStatus.value = await desktopApi.updateSpeedtest({
+      domain: speedtestForm.domain.trim(),
+      sub_path: speedtestForm.sub_path.trim()
+    })
+    message.success('测速域名与 Subpath 已保存')
+  } catch (err) {
+    message.error('保存测速设置失败: ' + formatError(err))
+  } finally {
+    savingSpeedtest.value = false
+  }
+}
+
+async function startSpeedtest() {
+  togglingSpeedtest.value = true
+  try {
+    speedtestStatus.value = await desktopApi.startSpeedtest()
+    message.success('测速源站已启动：' + (speedtestStatus.value.url || ''))
+  } catch (err) {
+    message.error('启动测速源站失败: ' + formatError(err))
+  } finally {
+    togglingSpeedtest.value = false
+  }
+}
+
+async function stopSpeedtest() {
+  togglingSpeedtest.value = true
+  try {
+    speedtestStatus.value = await desktopApi.stopSpeedtest()
+    message.success('测速源站已停止')
+  } catch (err) {
+    message.error('停止测速源站失败: ' + formatError(err))
+  } finally {
+    togglingSpeedtest.value = false
   }
 }
 

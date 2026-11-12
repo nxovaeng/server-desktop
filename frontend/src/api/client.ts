@@ -28,7 +28,9 @@ import type {
   ScanCertificatesResponse,
   ScanImportCertificatesResponse,
   SettingsDTO,
+  SpeedtestStatus,
   SubscriptionNginxResponse,
+  UpdateSpeedtestRequest,
   TokenDeleteResponse,
   TokenListResponse,
   UpdateSettingsRequest,
@@ -219,6 +221,10 @@ interface WailsAppBinding {
   DisableSubscriptionNginx(): Promise<SubscriptionNginxResponse>
   ApplyAPINginx(): Promise<APINginxResponse>
   DisableAPINginx(): Promise<APINginxResponse>
+  GetSpeedtestStatus(): Promise<SpeedtestStatus>
+  UpdateSpeedtest(req: UpdateSpeedtestRequest): Promise<SpeedtestStatus>
+  StartSpeedtest(): Promise<SpeedtestStatus>
+  StopSpeedtest(): Promise<SpeedtestStatus>
   GetCFTunnelStatus(): Promise<CFTunnelStatus>
   InstallCFTunnel(): Promise<CFTunnelInstallResponse>
   SetupCFTunnel(tunnelToken: string): Promise<CFTunnelActionResponse>
@@ -398,6 +404,10 @@ const rawDesktopApi = {
   disableSubscriptionNginx: () => getApp().DisableSubscriptionNginx(),
   applyAPINginx: () => getApp().ApplyAPINginx(),
   disableAPINginx: () => getApp().DisableAPINginx(),
+  getSpeedtestStatus: () => getApp().GetSpeedtestStatus(),
+  updateSpeedtest: (req: UpdateSpeedtestRequest) => getApp().UpdateSpeedtest(req),
+  startSpeedtest: () => getApp().StartSpeedtest(),
+  stopSpeedtest: () => getApp().StopSpeedtest(),
   getCFTunnelStatus: () => getApp().GetCFTunnelStatus(),
   installCFTunnel: () => getApp().InstallCFTunnel(),
   setupCFTunnel: (tunnelToken: string) => getApp().SetupCFTunnel(tunnelToken),
