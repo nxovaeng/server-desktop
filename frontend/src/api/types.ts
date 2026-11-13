@@ -799,3 +799,68 @@ export interface LogsResponse {
   lines: number
   content: string
 }
+
+// ===== Proton VPN Wireproxy =====
+
+export interface PVPNStatusResponse {
+  installed: boolean
+  service_status: string
+  running: boolean
+  server: string
+  country: string
+  ip: string
+  port: number
+  logged_in: boolean
+  auth_mode: string
+  cert_expires_at: number
+  total_servers: number
+  tier: number
+  outbound_exists: boolean
+  outbound_tag: string
+  api_endpoint: string
+}
+
+export interface PVPNCountryDTO {
+  code: string
+  name: string
+  count: number
+  avg_load: number
+}
+
+export interface PVPNCountriesResponse {
+  countries: PVPNCountryDTO[]
+}
+
+export interface PVPNServerDTO {
+  name: string
+  entry_ip: string
+  exit_ip: string
+  country: string
+  tier: number
+  load: number
+  score: number
+  status: number
+}
+
+export interface PVPNServersResponse {
+  servers: PVPNServerDTO[]
+}
+
+export interface PVPNConnectRequest {
+  country: string
+  server?: string
+  ensure_outbound: boolean
+}
+
+export interface PVPNConnectResponse {
+  success: boolean
+  server: string
+  country?: string
+  outbound_tag?: string
+  message: string
+}
+
+export interface PVPNActionResponse {
+  success: boolean
+  message: string
+}

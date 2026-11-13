@@ -1126,6 +1126,185 @@ export namespace apiclient {
 	        this.location = source["location"];
 	    }
 	}
+	export class PVPNActionResponse {
+	    success: boolean;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNActionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.message = source["message"];
+	    }
+	}
+	export class PVPNConnectResponse {
+	    success: boolean;
+	    server: string;
+	    country?: string;
+	    outbound_tag?: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNConnectResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.server = source["server"];
+	        this.country = source["country"];
+	        this.outbound_tag = source["outbound_tag"];
+	        this.message = source["message"];
+	    }
+	}
+	export class PVPNCountryDTO {
+	    code: string;
+	    name: string;
+	    count: number;
+	    avg_load: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNCountryDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.name = source["name"];
+	        this.count = source["count"];
+	        this.avg_load = source["avg_load"];
+	    }
+	}
+	export class PVPNCountriesResponse {
+	    countries: PVPNCountryDTO[];
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNCountriesResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.countries = this.convertValues(source["countries"], PVPNCountryDTO);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PVPNServerDTO {
+	    name: string;
+	    entry_ip: string;
+	    exit_ip: string;
+	    country: string;
+	    tier: number;
+	    load: number;
+	    score: number;
+	    status: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNServerDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.entry_ip = source["entry_ip"];
+	        this.exit_ip = source["exit_ip"];
+	        this.country = source["country"];
+	        this.tier = source["tier"];
+	        this.load = source["load"];
+	        this.score = source["score"];
+	        this.status = source["status"];
+	    }
+	}
+	export class PVPNServersResponse {
+	    servers: PVPNServerDTO[];
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNServersResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.servers = this.convertValues(source["servers"], PVPNServerDTO);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PVPNStatusResponse {
+	    installed: boolean;
+	    service_status: string;
+	    running: boolean;
+	    server: string;
+	    country: string;
+	    ip: string;
+	    port: number;
+	    logged_in: boolean;
+	    auth_mode: string;
+	    cert_expires_at: number;
+	    total_servers: number;
+	    tier: number;
+	    outbound_exists: boolean;
+	    outbound_tag: string;
+	    api_endpoint: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNStatusResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.installed = source["installed"];
+	        this.service_status = source["service_status"];
+	        this.running = source["running"];
+	        this.server = source["server"];
+	        this.country = source["country"];
+	        this.ip = source["ip"];
+	        this.port = source["port"];
+	        this.logged_in = source["logged_in"];
+	        this.auth_mode = source["auth_mode"];
+	        this.cert_expires_at = source["cert_expires_at"];
+	        this.total_servers = source["total_servers"];
+	        this.tier = source["tier"];
+	        this.outbound_exists = source["outbound_exists"];
+	        this.outbound_tag = source["outbound_tag"];
+	        this.api_endpoint = source["api_endpoint"];
+	    }
+	}
 	export class ParsedWireGuardConfig {
 	    private_key: string;
 	    client_public_key: string;

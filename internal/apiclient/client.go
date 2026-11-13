@@ -462,3 +462,32 @@ func (c *Client) SetupCFTunnel(ctx context.Context, token string) (CFTunnelActio
 func (c *Client) CFTunnelServiceAction(ctx context.Context, action string) (CFTunnelActionResponse, error) {
 	return doEnvelope[CFTunnelActionResponse](ctx, c, http.MethodPost, "/api/v1/tunnels/cf/service/"+url.PathEscape(action), nil)
 }
+
+func (c *Client) GetPVPNStatus(ctx context.Context) (PVPNStatusResponse, error) {
+	return doEnvelope[PVPNStatusResponse](ctx, c, http.MethodGet, "/api/v1/pvpn/status", nil)
+}
+func (c *Client) GetPVPNCountries(ctx context.Context) (PVPNCountriesResponse, error) {
+	return doEnvelope[PVPNCountriesResponse](ctx, c, http.MethodGet, "/api/v1/pvpn/countries", nil)
+}
+func (c *Client) GetPVPNServers(ctx context.Context, country string) (PVPNServersResponse, error) {
+	endpoint := "/api/v1/pvpn/servers"
+	if country != "" {
+		endpoint += "?country=" + url.QueryEscape(country)
+	}
+	return doEnvelope[PVPNServersResponse](ctx, c, http.MethodGet, endpoint, nil)
+}
+func (c *Client) ConnectPVPN(ctx context.Context, req PVPNConnectRequest) (PVPNConnectResponse, error) {
+	return doEnvelope[PVPNConnectResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/connect", req)
+}
+func (c *Client) DisconnectPVPN(ctx context.Context) (PVPNActionResponse, error) {
+	return doEnvelope[PVPNActionResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/disconnect", nil)
+}
+func (c *Client) PVPNServiceAction(ctx context.Context, action string) (PVPNActionResponse, error) {
+	return doEnvelope[PVPNActionResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/service/"+url.PathEscape(action), nil)
+}
+func (c *Client) InstallPVPN(ctx context.Context) (PVPNActionResponse, error) {
+	return doEnvelope[PVPNActionResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/install", nil)
+}
+func (c *Client) EnsurePVPNOutbound(ctx context.Context) (OutboundDTO, error) {
+	return doEnvelope[OutboundDTO](ctx, c, http.MethodPost, "/api/v1/pvpn/ensure-outbound", nil)
+}

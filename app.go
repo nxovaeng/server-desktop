@@ -964,3 +964,87 @@ func (a *App) CFTunnelServiceAction(action string) (apiclient.CFTunnelActionResp
 	defer cancel()
 	return c.CFTunnelServiceAction(ctx, action)
 }
+
+func (a *App) GetPVPNStatus() (apiclient.PVPNStatusResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNStatusResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetPVPNStatus(ctx)
+}
+
+func (a *App) GetPVPNCountries() (apiclient.PVPNCountriesResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNCountriesResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetPVPNCountries(ctx)
+}
+
+func (a *App) GetPVPNServers(country string) (apiclient.PVPNServersResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNServersResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetPVPNServers(ctx, country)
+}
+
+func (a *App) ConnectPVPN(country string, server string, ensureOutbound bool) (apiclient.PVPNConnectResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNConnectResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(45 * time.Second)
+	defer cancel()
+	return c.ConnectPVPN(ctx, apiclient.PVPNConnectRequest{
+		Country:        country,
+		Server:         server,
+		EnsureOutbound: ensureOutbound,
+	})
+}
+
+func (a *App) DisconnectPVPN() (apiclient.PVPNActionResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNActionResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.DisconnectPVPN(ctx)
+}
+
+func (a *App) PVPNServiceAction(action string) (apiclient.PVPNActionResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNActionResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.PVPNServiceAction(ctx, action)
+}
+
+func (a *App) InstallPVPN() (apiclient.PVPNActionResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNActionResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(180 * time.Second)
+	defer cancel()
+	return c.InstallPVPN(ctx)
+}
+
+func (a *App) EnsurePVPNOutbound() (apiclient.OutboundDTO, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.OutboundDTO{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.EnsurePVPNOutbound(ctx)
+}

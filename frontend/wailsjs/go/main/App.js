@@ -18,6 +18,10 @@ export function CFTunnelServiceAction(arg1) {
   return window['go']['main']['App']['CFTunnelServiceAction'](arg1);
 }
 
+export function ConnectPVPN(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ConnectPVPN'](arg1, arg2, arg3);
+}
+
 export function ConnectProfile(arg1, arg2) {
   return window['go']['main']['App']['ConnectProfile'](arg1, arg2);
 }
@@ -98,6 +102,14 @@ export function Disconnect() {
   return window['go']['main']['App']['Disconnect']();
 }
 
+export function DisconnectPVPN() {
+  return window['go']['main']['App']['DisconnectPVPN']();
+}
+
+export function EnsurePVPNOutbound() {
+  return window['go']['main']['App']['EnsurePVPNOutbound']();
+}
+
 export function ExportWGPeerConfig(arg1) {
   return window['go']['main']['App']['ExportWGPeerConfig'](arg1);
 }
@@ -148,6 +160,18 @@ export function GetLogs(arg1, arg2) {
 
 export function GetOutbound(arg1) {
   return window['go']['main']['App']['GetOutbound'](arg1);
+}
+
+export function GetPVPNCountries() {
+  return window['go']['main']['App']['GetPVPNCountries']();
+}
+
+export function GetPVPNServers(arg1) {
+  return window['go']['main']['App']['GetPVPNServers'](arg1);
+}
+
+export function GetPVPNStatus() {
+  return window['go']['main']['App']['GetPVPNStatus']();
 }
 
 export function GetRouting(arg1) {
@@ -202,6 +226,10 @@ export function InstallCFTunnel() {
   return window['go']['main']['App']['InstallCFTunnel']();
 }
 
+export function InstallPVPN() {
+  return window['go']['main']['App']['InstallPVPN']();
+}
+
 export function IssueDomainCert(arg1) {
   return window['go']['main']['App']['IssueDomainCert'](arg1);
 }
@@ -236,6 +264,10 @@ export function ListUsers(arg1) {
 
 export function ListWGPeers() {
   return window['go']['main']['App']['ListWGPeers']();
+}
+
+export function PVPNServiceAction(arg1) {
+  return window['go']['main']['App']['PVPNServiceAction'](arg1);
 }
 
 export function ParseWireGuardOutbound(arg1) {

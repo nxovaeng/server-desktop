@@ -14,6 +14,8 @@ export function ApplyXrayConfig(arg1:boolean,arg2:boolean):Promise<apiclient.Xra
 
 export function CFTunnelServiceAction(arg1:string):Promise<apiclient.CFTunnelActionResponse>;
 
+export function ConnectPVPN(arg1:string,arg2:string,arg3:boolean):Promise<apiclient.PVPNConnectResponse>;
+
 export function ConnectProfile(arg1:string,arg2:boolean):Promise<session.ConnectionStatus>;
 
 export function CreateDomain(arg1:apiclient.UpsertDomainRequest):Promise<apiclient.DomainDTO>;
@@ -54,6 +56,10 @@ export function DisableSubscriptionNginx():Promise<apiclient.SubscriptionNginxRe
 
 export function Disconnect():Promise<void>;
 
+export function DisconnectPVPN():Promise<apiclient.PVPNActionResponse>;
+
+export function EnsurePVPNOutbound():Promise<apiclient.OutboundDTO>;
+
 export function ExportWGPeerConfig(arg1:number):Promise<apiclient.WGPeerExportConfigResponse>;
 
 export function GenerateLocalWGKeys():Promise<local.WGKeyPair>;
@@ -79,6 +85,12 @@ export function GetInboundWGClient(arg1:string):Promise<apiclient.InboundWGClien
 export function GetLogs(arg1:string,arg2:number):Promise<apiclient.LogsResponse>;
 
 export function GetOutbound(arg1:string):Promise<apiclient.OutboundDTO>;
+
+export function GetPVPNCountries():Promise<apiclient.PVPNCountriesResponse>;
+
+export function GetPVPNServers(arg1:string):Promise<apiclient.PVPNServersResponse>;
+
+export function GetPVPNStatus():Promise<apiclient.PVPNStatusResponse>;
 
 export function GetRouting(arg1:string):Promise<apiclient.RoutingRuleDTO>;
 
@@ -106,6 +118,8 @@ export function ImportSingleCert(arg1:apiclient.ImportCertRequest):Promise<apicl
 
 export function InstallCFTunnel():Promise<apiclient.CFTunnelInstallResponse>;
 
+export function InstallPVPN():Promise<apiclient.PVPNActionResponse>;
+
 export function IssueDomainCert(arg1:apiclient.IssueCertRequest):Promise<apiclient.IssueCertResponse>;
 
 export function ListDomains():Promise<apiclient.DomainListResponse>;
@@ -123,6 +137,8 @@ export function ListTokens():Promise<apiclient.TokenListResponse>;
 export function ListUsers(arg1:string):Promise<apiclient.UserListResponse>;
 
 export function ListWGPeers():Promise<apiclient.WGPeerListResponse>;
+
+export function PVPNServiceAction(arg1:string):Promise<apiclient.PVPNActionResponse>;
 
 export function ParseWireGuardOutbound(arg1:string):Promise<apiclient.ParsedWireGuardConfig>;
 

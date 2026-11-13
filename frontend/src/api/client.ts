@@ -23,6 +23,11 @@ import type {
   OutboundListResponse,
   OutboundTestResult,
   ParsedWireGuardConfig,
+  PVPNConnectResponse,
+  PVPNCountriesResponse,
+  PVPNActionResponse,
+  PVPNServersResponse,
+  PVPNStatusResponse,
   RoutingRuleDTO,
   RoutingRuleListResponse,
   ScanCertificatesResponse,
@@ -229,6 +234,15 @@ interface WailsAppBinding {
   InstallCFTunnel(): Promise<CFTunnelInstallResponse>
   SetupCFTunnel(tunnelToken: string): Promise<CFTunnelActionResponse>
   CFTunnelServiceAction(action: string): Promise<CFTunnelActionResponse>
+
+  GetPVPNStatus(): Promise<PVPNStatusResponse>
+  GetPVPNCountries(): Promise<PVPNCountriesResponse>
+  GetPVPNServers(country: string): Promise<PVPNServersResponse>
+  ConnectPVPN(country: string, server: string, ensureOutbound: boolean): Promise<PVPNConnectResponse>
+  DisconnectPVPN(): Promise<PVPNActionResponse>
+  PVPNServiceAction(action: string): Promise<PVPNActionResponse>
+  InstallPVPN(): Promise<PVPNActionResponse>
+  EnsurePVPNOutbound(): Promise<OutboundDTO>
 }
 
 declare global {
@@ -412,7 +426,17 @@ const rawDesktopApi = {
   installCFTunnel: () => getApp().InstallCFTunnel(),
   setupCFTunnel: (tunnelToken: string) => getApp().SetupCFTunnel(tunnelToken),
   cfTunnelServiceAction: (action: 'start' | 'stop' | 'restart' | 'uninstall') =>
-    getApp().CFTunnelServiceAction(action)
+    getApp().CFTunnelServiceAction(action),
+
+  getPVPNStatus: () => getApp().GetPVPNStatus(),
+  getPVPNCountries: () => getApp().GetPVPNCountries(),
+  getPVPNServers: (country = '') => getApp().GetPVPNServers(country),
+  connectPVPN: (country: string, server = '', ensureOutbound = true) =>
+    getApp().ConnectPVPN(country, server, ensureOutbound),
+  disconnectPVPN: () => getApp().DisconnectPVPN(),
+  pvpnServiceAction: (action: string) => getApp().PVPNServiceAction(action),
+  installPVPN: () => getApp().InstallPVPN(),
+  ensurePVPNOutbound: () => getApp().EnsurePVPNOutbound()
 }
 
 // 所有 desktopApi 调用都经此 Proxy：任一方法返回 401 即触发一次已注册的

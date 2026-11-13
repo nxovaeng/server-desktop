@@ -145,6 +145,7 @@ import { useMessage, type MenuOption } from 'naive-ui'
 import {
   Activity,
   ArrowDownUp,
+  Compass,
   FileText,
   Globe,
   KeyRound,
@@ -180,6 +181,7 @@ const menuOptions: MenuOption[] = [
   { label: '用户管理', key: '/users', icon: renderIcon(Users) },
   { label: '入站配置', key: '/inbounds', icon: renderIcon(ArrowDownUp) },
   { label: '出站配置', key: '/outbounds', icon: renderIcon(Network) },
+  { label: 'Proton 出口', key: '/pvpn', icon: renderIcon(Compass) },
   { label: '路由规则', key: '/routing', icon: renderIcon(RouteIcon) },
   { label: '域名证书', key: '/domains', icon: renderIcon(Globe) },
   { label: 'WireGuard', key: '/wireguard', icon: renderIcon(Shield) },

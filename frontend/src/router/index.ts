@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/users', name: 'users', component: () => import('@/views/UsersView.vue') },
     { path: '/inbounds', name: 'inbounds', component: () => import('@/views/InboundsView.vue') },
     { path: '/outbounds', name: 'outbounds', component: () => import('@/views/OutboundsView.vue') },
+    { path: '/pvpn', name: 'pvpn', component: () => import('@/views/PVPNView.vue') },
     { path: '/routing', name: 'routing', component: () => import('@/views/RoutingView.vue') },
     { path: '/domains', name: 'domains', component: () => import('@/views/DomainsView.vue') },
     { path: '/wireguard', name: 'wireguard', component: () => import('@/views/WireGuardView.vue') },
