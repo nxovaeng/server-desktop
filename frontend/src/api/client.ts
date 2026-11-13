@@ -250,6 +250,7 @@ interface WailsAppBinding {
   UpdatePVPNConfig(socksPort: number): Promise<PVPNConfigResponse>
   LoginPVPN(captchaToken?: string): Promise<PVPNLoginResponse>
   ImportPVPNsession(req: PVPNImportSessionRequest): Promise<PVPNLoginResponse>
+  OpenBrowserURL(url: string): Promise<void>
 }
 
 declare global {
@@ -447,7 +448,8 @@ const rawDesktopApi = {
   getPVPNConfig: () => getApp().GetPVPNConfig(),
   updatePVPNConfig: (socksPort: number) => getApp().UpdatePVPNConfig(socksPort),
   loginPVPN: (captchaToken = '') => getApp().LoginPVPN(captchaToken),
-  importPVPNsession: (req: PVPNImportSessionRequest) => getApp().ImportPVPNsession(req)
+  importPVPNsession: (req: PVPNImportSessionRequest) => getApp().ImportPVPNsession(req),
+  openBrowserURL: (url: string) => getApp().OpenBrowserURL(url)
 }
 
 // 所有 desktopApi 调用都经此 Proxy：任一方法返回 401 即触发一次已注册的

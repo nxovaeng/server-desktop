@@ -278,6 +278,10 @@ export function LoginPVPN(arg1) {
   return window['go']['main']['App']['LoginPVPN'](arg1);
 }
 
+export function OpenBrowserURL(arg1) {
+  return window['go']['main']['App']['OpenBrowserURL'](arg1);
+}
+
 export function PVPNServiceAction(arg1) {
   return window['go']['main']['App']['PVPNServiceAction'](arg1);
 }

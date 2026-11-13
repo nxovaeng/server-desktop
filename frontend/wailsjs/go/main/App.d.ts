@@ -144,6 +144,8 @@ export function ListWGPeers():Promise<apiclient.WGPeerListResponse>;
 
 export function LoginPVPN(arg1:string):Promise<apiclient.PVPNLoginResponse>;
 
+export function OpenBrowserURL(arg1:string):Promise<void>;
+
 export function PVPNServiceAction(arg1:string):Promise<apiclient.PVPNActionResponse>;
 
 export function ParseWireGuardOutbound(arg1:string):Promise<apiclient.ParsedWireGuardConfig>;

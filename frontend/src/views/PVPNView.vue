@@ -372,21 +372,30 @@
         </n-alert>
 
         <div class="space-y-3 text-xs leading-relaxed">
-          <div class="font-medium text-strong">处理方式一（浏览器完成验证并继续）：</div>
+          <div class="font-medium text-strong">处理方式一（在浏览器中打开验证链接并继续）：</div>
           <div class="text-muted">
-            1. 点击下方按钮，将在默认浏览器中打开 Proton 官方验证页面：
+            1. 请复制并在浏览器（如 Chrome / Edge / Firefox）中打开下方 Proton 官方人机验证页面完成拼图：
           </div>
-          <div>
-            <n-button
-              type="primary"
-              size="small"
-              @click="openCaptchaUrl"
-            >
-              在浏览器中打开验证页面 (verify.proton.me) ↗
-            </n-button>
+          <div class="space-y-2">
+            <n-input
+              v-model:value="captchaWebUrl"
+              readonly
+              type="textarea"
+              :rows="2"
+              placeholder="https://verify.proton.me/?..."
+              class="font-mono text-xs w-full"
+            />
+            <div class="flex items-center gap-2">
+              <n-button size="small" type="primary" @click="handleCopyCaptchaUrl">
+                复制验证链接
+              </n-button>
+              <n-button size="small" secondary @click="openCaptchaUrl">
+                在浏览器中打开 ↗
+              </n-button>
+            </div>
           </div>
-          <div class="text-muted">
-            2. 在浏览器中完成拼图/人机验证后，点击下方按钮完成凭证换发：
+          <div class="text-muted pt-2">
+            2. 在浏览器中完成拼图/人机验证后，回到此处点击下方按钮完成登录：
           </div>
           <div>
             <n-button
@@ -688,9 +697,22 @@ async function handleSavePort() {
   }
 }
 
-function openCaptchaUrl() {
-  if (captchaWebUrl.value) {
+async function openCaptchaUrl() {
+  if (!captchaWebUrl.value) return
+  try {
+    await desktopApi.openBrowserURL(captchaWebUrl.value)
+  } catch {
     window.open(captchaWebUrl.value, '_blank')
+  }
+}
+
+async function handleCopyCaptchaUrl() {
+  if (!captchaWebUrl.value) return
+  try {
+    await copyToClipboard(captchaWebUrl.value)
+    message.success('已复制验证链接，请在浏览器中打开完成拼图验证')
+  } catch (err) {
+    message.error('复制失败: ' + formatError(err))
   }
 }
 

@@ -1088,3 +1088,7 @@ func (a *App) ImportPVPNsession(req apiclient.PVPNImportSessionRequest) (apiclie
 	defer cancel()
 	return c.ImportPVPNsession(ctx, req)
 }
+
+func (a *App) OpenBrowserURL(targetURL string) {
+	runtime.BrowserOpenURL(a.ctx, targetURL)
+}
