@@ -69,18 +69,28 @@
             {{ getExpiryCountdown(status?.cert_expires_at) }}
           </span>
         </div>
-        <div class="mt-2 text-[11px] text-muted flex items-center justify-between">
+        <div class="mt-2 text-[11px] text-muted flex items-center justify-between gap-1">
           <span class="truncate">到期：<span class="mono">{{ formatExpiry(status?.cert_expires_at) }}</span></span>
-          <n-button
-            size="tiny"
-            type="primary"
-            secondary
-            :disabled="!conn.status.connected || loggingIn"
-            :loading="loggingIn"
-            @click="handleLogin"
-          >
-            {{ status?.logged_in ? '刷新凭据' : '立即登录' }}
-          </n-button>
+          <div class="flex items-center gap-1">
+            <n-button
+              size="tiny"
+              type="primary"
+              secondary
+              :disabled="!conn.status.connected || loggingIn"
+              :loading="loggingIn"
+              @click="handleLogin"
+            >
+              {{ status?.logged_in ? '刷新凭据' : '立即登录' }}
+            </n-button>
+            <n-button
+              size="tiny"
+              secondary
+              :disabled="!conn.status.connected"
+              @click="showImportModal = true"
+            >
+              导入
+            </n-button>
+          </div>
         </div>
       </n-card>
 
@@ -347,6 +357,101 @@
         </div>
       </div>
     </n-modal>
+
+    <!-- Proton 人机验证 (CAPTCHA) 引导弹窗 -->
+    <n-modal
+      v-model:show="showCaptchaModal"
+      preset="card"
+      title="Proton 人机验证 (CAPTCHA)"
+      size="small"
+      style="max-width: 520px"
+    >
+      <div class="space-y-4">
+        <n-alert type="warning" size="small">
+          由于远程服务器使用的是数据中心/VPS 机房 IP，Proton 触发了官方防滥用人机验证 (Code 9001)。
+        </n-alert>
+
+        <div class="space-y-3 text-xs leading-relaxed">
+          <div class="font-medium text-strong">处理方式一（浏览器完成验证并继续）：</div>
+          <div class="text-muted">
+            1. 点击下方按钮，将在默认浏览器中打开 Proton 官方验证页面：
+          </div>
+          <div>
+            <n-button
+              type="primary"
+              size="small"
+              @click="openCaptchaUrl"
+            >
+              在浏览器中打开验证页面 (verify.proton.me) ↗
+            </n-button>
+          </div>
+          <div class="text-muted">
+            2. 在浏览器中完成拼图/人机验证后，点击下方按钮完成凭证换发：
+          </div>
+          <div>
+            <n-button
+              type="success"
+              size="small"
+              :loading="loggingIn"
+              @click="handleContinueCaptcha"
+            >
+              我已完成验证，继续登录
+            </n-button>
+          </div>
+
+          <div class="pt-3 border-t border-subtle font-medium text-strong">处理方式二（直接导入已有凭据）：</div>
+          <div class="text-muted">
+            如果您在其他设备上已有现成的 Proton session.json 或账户凭据，也可以直接导入：
+          </div>
+          <div>
+            <n-button size="small" secondary @click="showCaptchaModal = false; showImportModal = true">
+              打开 Session 导入窗口
+            </n-button>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <n-button size="small" @click="showCaptchaModal = false">关闭</n-button>
+        </div>
+      </div>
+    </n-modal>
+
+    <!-- 导入 Proton Session 弹窗 -->
+    <n-modal
+      v-model:show="showImportModal"
+      preset="card"
+      title="导入 Proton Session 凭据"
+      size="small"
+      style="max-width: 540px"
+    >
+      <div class="space-y-4 text-xs">
+        <div class="text-muted leading-relaxed">
+          您可以直接粘贴已有的 Proton <code class="mono">session.json</code> 内容，服务端将直接加载并签发/刷新 WireGuard 证书，无需重复走访客注册。
+        </div>
+
+        <n-form-item label="Session JSON 内容" :show-feedback="false">
+          <n-input
+            v-model:value="importSessionJson"
+            type="textarea"
+            :rows="6"
+            placeholder='{ "access_token": "...", "uid": "...", "wg_private_key": "..." }'
+            class="font-mono text-xs"
+          />
+        </n-form-item>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <n-button size="small" @click="showImportModal = false">取消</n-button>
+          <n-button
+            size="small"
+            type="primary"
+            :loading="importingSession"
+            @click="handleImportSession"
+          >
+            导入并激活
+          </n-button>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -373,6 +478,14 @@ const loggingIn = ref(false)
 const showPortModal = ref(false)
 const customPort = ref<number | null>(1080)
 const savingPort = ref(false)
+
+const showCaptchaModal = ref(false)
+const captchaWebUrl = ref('')
+const captchaToken = ref('')
+
+const showImportModal = ref(false)
+const importSessionJson = ref('')
+const importingSession = ref(false)
 
 const status = ref<PVPNStatusResponse | null>(null)
 const countries = ref<PVPNCountryDTO[]>([])
@@ -575,16 +688,91 @@ async function handleSavePort() {
   }
 }
 
+function openCaptchaUrl() {
+  if (captchaWebUrl.value) {
+    window.open(captchaWebUrl.value, '_blank')
+  }
+}
+
 async function handleLogin() {
   loggingIn.value = true
   try {
-    const res = await desktopApi.loginPVPN()
+    const res = await desktopApi.loginPVPN('')
+    if (res.human_verification_needed) {
+      captchaWebUrl.value = res.captcha_web_url || ''
+      captchaToken.value = res.captcha_token || ''
+      showCaptchaModal.value = true
+      message.warning('Proton 触发人机验证，请在弹出窗口中完成验证')
+      return
+    }
     message.success(res.message || 'Proton 访客登录与凭据刷新成功')
     await loadData()
   } catch (err) {
     message.error('登录/刷新凭据失败: ' + formatError(err))
   } finally {
     loggingIn.value = false
+  }
+}
+
+async function handleContinueCaptcha() {
+  if (!captchaToken.value) {
+    message.error('未找到有效的验证 Token')
+    return
+  }
+  loggingIn.value = true
+  try {
+    const res = await desktopApi.loginPVPN(captchaToken.value)
+    if (res.human_verification_needed) {
+      message.warning('验证尚未通过或已失效，请重新在浏览器完成验证后点击')
+      return
+    }
+    showCaptchaModal.value = false
+    message.success(res.message || '已成功通过人机验证并完成登录！')
+    await loadData()
+  } catch (err) {
+    message.error('完成验证登录失败: ' + formatError(err))
+  } finally {
+    loggingIn.value = false
+  }
+}
+
+async function handleImportSession() {
+  const raw = importSessionJson.value.trim()
+  if (!raw) {
+    message.error('请输入 Session 内容')
+    return
+  }
+  let parsed: any
+  try {
+    parsed = JSON.parse(raw)
+  } catch (e) {
+    message.error('Session 格式必须为合法 JSON')
+    return
+  }
+  if (!parsed.access_token) {
+    message.error('JSON 中必须包含 access_token 字段')
+    return
+  }
+
+  importingSession.value = true
+  try {
+    const res = await desktopApi.importPVPNsession({
+      access_token: parsed.access_token,
+      refresh_token: parsed.refresh_token,
+      uid: parsed.uid,
+      user_id: parsed.user_id,
+      wg_private_key: parsed.wg_private_key,
+      wg_certificate: parsed.wg_certificate,
+      cert_expires_at: parsed.cert_expires_at
+    })
+    message.success(res.message || 'Session 导入成功')
+    showImportModal.value = false
+    importSessionJson.value = ''
+    await loadData()
+  } catch (err) {
+    message.error('导入失败: ' + formatError(err))
+  } finally {
+    importingSession.value = false
   }
 }
 

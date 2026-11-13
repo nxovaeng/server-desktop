@@ -497,6 +497,9 @@ func (c *Client) GetPVPNConfig(ctx context.Context) (PVPNConfigResponse, error) 
 func (c *Client) UpdatePVPNConfig(ctx context.Context, req PVPNConfigRequest) (PVPNConfigResponse, error) {
 	return doEnvelope[PVPNConfigResponse](ctx, c, http.MethodPut, "/api/v1/pvpn/config", req)
 }
-func (c *Client) LoginPVPN(ctx context.Context) (PVPNLoginResponse, error) {
-	return doEnvelope[PVPNLoginResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/login", nil)
+func (c *Client) LoginPVPN(ctx context.Context, captchaToken string) (PVPNLoginResponse, error) {
+	return doEnvelope[PVPNLoginResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/login", PVPNLoginRequest{CaptchaToken: captchaToken})
+}
+func (c *Client) ImportPVPNsession(ctx context.Context, req PVPNImportSessionRequest) (PVPNLoginResponse, error) {
+	return doEnvelope[PVPNLoginResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/session", req)
 }

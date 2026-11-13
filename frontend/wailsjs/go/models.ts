@@ -1229,12 +1229,40 @@ export namespace apiclient {
 		}
 	}
 	
+	export class PVPNImportSessionRequest {
+	    access_token: string;
+	    refresh_token?: string;
+	    uid?: string;
+	    user_id?: string;
+	    wg_private_key?: string;
+	    wg_certificate?: string;
+	    cert_expires_at?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNImportSessionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.access_token = source["access_token"];
+	        this.refresh_token = source["refresh_token"];
+	        this.uid = source["uid"];
+	        this.user_id = source["user_id"];
+	        this.wg_private_key = source["wg_private_key"];
+	        this.wg_certificate = source["wg_certificate"];
+	        this.cert_expires_at = source["cert_expires_at"];
+	    }
+	}
 	export class PVPNLoginResponse {
 	    success: boolean;
 	    message: string;
-	    cert_expires_at: number;
-	    auth_mode: string;
+	    cert_expires_at?: number;
+	    auth_mode?: string;
 	    session_path?: string;
+	    human_verification_needed?: boolean;
+	    captcha_web_url?: string;
+	    captcha_token?: string;
+	    captcha_methods?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new PVPNLoginResponse(source);
@@ -1247,6 +1275,10 @@ export namespace apiclient {
 	        this.cert_expires_at = source["cert_expires_at"];
 	        this.auth_mode = source["auth_mode"];
 	        this.session_path = source["session_path"];
+	        this.human_verification_needed = source["human_verification_needed"];
+	        this.captcha_web_url = source["captcha_web_url"];
+	        this.captcha_token = source["captcha_token"];
+	        this.captcha_methods = source["captcha_methods"];
 	    }
 	}
 	export class PVPNServerDTO {

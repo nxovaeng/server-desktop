@@ -218,6 +218,10 @@ export function ImportOutbound(arg1) {
   return window['go']['main']['App']['ImportOutbound'](arg1);
 }
 
+export function ImportPVPNsession(arg1) {
+  return window['go']['main']['App']['ImportPVPNsession'](arg1);
+}
+
 export function ImportRoutingPreset(arg1) {
   return window['go']['main']['App']['ImportRoutingPreset'](arg1);
 }
@@ -270,8 +274,8 @@ export function ListWGPeers() {
   return window['go']['main']['App']['ListWGPeers']();
 }
 
-export function LoginPVPN() {
-  return window['go']['main']['App']['LoginPVPN']();
+export function LoginPVPN(arg1) {
+  return window['go']['main']['App']['LoginPVPN'](arg1);
 }
 
 export function PVPNServiceAction(arg1) {

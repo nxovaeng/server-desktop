@@ -878,10 +878,24 @@ export interface PVPNConfigResponse {
   message?: string
 }
 
+export interface PVPNImportSessionRequest {
+  access_token: string
+  refresh_token?: string
+  uid?: string
+  user_id?: string
+  wg_private_key?: string
+  wg_certificate?: string
+  cert_expires_at?: number
+}
+
 export interface PVPNLoginResponse {
   success: boolean
   message: string
-  cert_expires_at: number
-  auth_mode: string
+  cert_expires_at?: number
+  auth_mode?: string
   session_path?: string
+  human_verification_needed?: boolean
+  captcha_web_url?: string
+  captcha_token?: string
+  captcha_methods?: string[]
 }

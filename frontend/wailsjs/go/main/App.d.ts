@@ -114,6 +114,8 @@ export function GetXrayStatus():Promise<apiclient.XrayStatusResponse>;
 
 export function ImportOutbound(arg1:string):Promise<apiclient.OutboundDTO>;
 
+export function ImportPVPNsession(arg1:apiclient.PVPNImportSessionRequest):Promise<apiclient.PVPNLoginResponse>;
+
 export function ImportRoutingPreset(arg1:string):Promise<apiclient.ImportPresetResponse>;
 
 export function ImportSingleCert(arg1:apiclient.ImportCertRequest):Promise<apiclient.DomainDTO>;
@@ -140,7 +142,7 @@ export function ListUsers(arg1:string):Promise<apiclient.UserListResponse>;
 
 export function ListWGPeers():Promise<apiclient.WGPeerListResponse>;
 
-export function LoginPVPN():Promise<apiclient.PVPNLoginResponse>;
+export function LoginPVPN(arg1:string):Promise<apiclient.PVPNLoginResponse>;
 
 export function PVPNServiceAction(arg1:string):Promise<apiclient.PVPNActionResponse>;
 
