@@ -1140,6 +1140,26 @@ export namespace apiclient {
 	        this.message = source["message"];
 	    }
 	}
+	export class PVPNConfigResponse {
+	    socks_port: number;
+	    socks_host: string;
+	    data_dir: string;
+	    session_path: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNConfigResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.socks_port = source["socks_port"];
+	        this.socks_host = source["socks_host"];
+	        this.data_dir = source["data_dir"];
+	        this.session_path = source["session_path"];
+	        this.message = source["message"];
+	    }
+	}
 	export class PVPNConnectResponse {
 	    success: boolean;
 	    server: string;
@@ -1209,6 +1229,26 @@ export namespace apiclient {
 		}
 	}
 	
+	export class PVPNLoginResponse {
+	    success: boolean;
+	    message: string;
+	    cert_expires_at: number;
+	    auth_mode: string;
+	    session_path?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PVPNLoginResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.message = source["message"];
+	        this.cert_expires_at = source["cert_expires_at"];
+	        this.auth_mode = source["auth_mode"];
+	        this.session_path = source["session_path"];
+	    }
+	}
 	export class PVPNServerDTO {
 	    name: string;
 	    entry_ip: string;
@@ -1281,6 +1321,7 @@ export namespace apiclient {
 	    outbound_exists: boolean;
 	    outbound_tag: string;
 	    api_endpoint: string;
+	    session_path?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new PVPNStatusResponse(source);
@@ -1303,6 +1344,7 @@ export namespace apiclient {
 	        this.outbound_exists = source["outbound_exists"];
 	        this.outbound_tag = source["outbound_tag"];
 	        this.api_endpoint = source["api_endpoint"];
+	        this.session_path = source["session_path"];
 	    }
 	}
 	export class ParsedWireGuardConfig {

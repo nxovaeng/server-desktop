@@ -86,6 +86,8 @@ export function GetLogs(arg1:string,arg2:number):Promise<apiclient.LogsResponse>
 
 export function GetOutbound(arg1:string):Promise<apiclient.OutboundDTO>;
 
+export function GetPVPNConfig():Promise<apiclient.PVPNConfigResponse>;
+
 export function GetPVPNCountries():Promise<apiclient.PVPNCountriesResponse>;
 
 export function GetPVPNServers(arg1:string):Promise<apiclient.PVPNServersResponse>;
@@ -138,6 +140,8 @@ export function ListUsers(arg1:string):Promise<apiclient.UserListResponse>;
 
 export function ListWGPeers():Promise<apiclient.WGPeerListResponse>;
 
+export function LoginPVPN():Promise<apiclient.PVPNLoginResponse>;
+
 export function PVPNServiceAction(arg1:string):Promise<apiclient.PVPNActionResponse>;
 
 export function ParseWireGuardOutbound(arg1:string):Promise<apiclient.ParsedWireGuardConfig>;
@@ -185,6 +189,8 @@ export function UpdateDomain(arg1:string,arg2:apiclient.UpsertDomainRequest):Pro
 export function UpdateInbound(arg1:string,arg2:apiclient.UpsertInboundRequest):Promise<apiclient.InboundDTO>;
 
 export function UpdateOutbound(arg1:string,arg2:apiclient.UpsertOutboundRequest):Promise<apiclient.OutboundDTO>;
+
+export function UpdatePVPNConfig(arg1:number):Promise<apiclient.PVPNConfigResponse>;
 
 export function UpdateRouting(arg1:string,arg2:apiclient.UpsertRoutingRuleRequest):Promise<apiclient.RoutingRuleDTO>;
 

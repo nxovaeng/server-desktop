@@ -162,6 +162,10 @@ export function GetOutbound(arg1) {
   return window['go']['main']['App']['GetOutbound'](arg1);
 }
 
+export function GetPVPNConfig() {
+  return window['go']['main']['App']['GetPVPNConfig']();
+}
+
 export function GetPVPNCountries() {
   return window['go']['main']['App']['GetPVPNCountries']();
 }
@@ -266,6 +270,10 @@ export function ListWGPeers() {
   return window['go']['main']['App']['ListWGPeers']();
 }
 
+export function LoginPVPN() {
+  return window['go']['main']['App']['LoginPVPN']();
+}
+
 export function PVPNServiceAction(arg1) {
   return window['go']['main']['App']['PVPNServiceAction'](arg1);
 }
@@ -360,6 +368,10 @@ export function UpdateInbound(arg1, arg2) {
 
 export function UpdateOutbound(arg1, arg2) {
   return window['go']['main']['App']['UpdateOutbound'](arg1, arg2);
+}
+
+export function UpdatePVPNConfig(arg1) {
+  return window['go']['main']['App']['UpdatePVPNConfig'](arg1);
 }
 
 export function UpdateRouting(arg1, arg2) {

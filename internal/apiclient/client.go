@@ -491,3 +491,12 @@ func (c *Client) InstallPVPN(ctx context.Context) (PVPNActionResponse, error) {
 func (c *Client) EnsurePVPNOutbound(ctx context.Context) (OutboundDTO, error) {
 	return doEnvelope[OutboundDTO](ctx, c, http.MethodPost, "/api/v1/pvpn/ensure-outbound", nil)
 }
+func (c *Client) GetPVPNConfig(ctx context.Context) (PVPNConfigResponse, error) {
+	return doEnvelope[PVPNConfigResponse](ctx, c, http.MethodGet, "/api/v1/pvpn/config", nil)
+}
+func (c *Client) UpdatePVPNConfig(ctx context.Context, req PVPNConfigRequest) (PVPNConfigResponse, error) {
+	return doEnvelope[PVPNConfigResponse](ctx, c, http.MethodPut, "/api/v1/pvpn/config", req)
+}
+func (c *Client) LoginPVPN(ctx context.Context) (PVPNLoginResponse, error) {
+	return doEnvelope[PVPNLoginResponse](ctx, c, http.MethodPost, "/api/v1/pvpn/login", nil)
+}

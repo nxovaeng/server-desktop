@@ -818,6 +818,7 @@ export interface PVPNStatusResponse {
   outbound_exists: boolean
   outbound_tag: string
   api_endpoint: string
+  session_path?: string
 }
 
 export interface PVPNCountryDTO {
@@ -863,4 +864,24 @@ export interface PVPNConnectResponse {
 export interface PVPNActionResponse {
   success: boolean
   message: string
+}
+
+export interface PVPNConfigRequest {
+  socks_port: number
+}
+
+export interface PVPNConfigResponse {
+  socks_port: number
+  socks_host: string
+  data_dir: string
+  session_path: string
+  message?: string
+}
+
+export interface PVPNLoginResponse {
+  success: boolean
+  message: string
+  cert_expires_at: number
+  auth_mode: string
+  session_path?: string
 }

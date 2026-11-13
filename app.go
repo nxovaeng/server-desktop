@@ -1048,3 +1048,33 @@ func (a *App) EnsurePVPNOutbound() (apiclient.OutboundDTO, error) {
 	defer cancel()
 	return c.EnsurePVPNOutbound(ctx)
 }
+
+func (a *App) GetPVPNConfig() (apiclient.PVPNConfigResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNConfigResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.GetPVPNConfig(ctx)
+}
+
+func (a *App) UpdatePVPNConfig(socksPort int) (apiclient.PVPNConfigResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNConfigResponse{}, err
+	}
+	ctx, cancel := a.callCtx()
+	defer cancel()
+	return c.UpdatePVPNConfig(ctx, apiclient.PVPNConfigRequest{SocksPort: socksPort})
+}
+
+func (a *App) LoginPVPN() (apiclient.PVPNLoginResponse, error) {
+	c, err := a.client()
+	if err != nil {
+		return apiclient.PVPNLoginResponse{}, err
+	}
+	ctx, cancel := a.timeoutCtx(45 * time.Second)
+	defer cancel()
+	return c.LoginPVPN(ctx)
+}

@@ -53,6 +53,7 @@
           <div class="flex items-center gap-1">
             <span class="mono">127.0.0.1:{{ status?.port || 1080 }}</span>
             <n-button size="tiny" text type="primary" @click="handleCopyAddr">复制</n-button>
+            <n-button size="tiny" text type="warning" @click="openPortModal">修改</n-button>
           </div>
         </div>
       </n-card>
@@ -61,13 +62,25 @@
       <n-card size="small">
         <div class="text-xs text-muted mb-1">Proton 凭证与 24h 轮换</div>
         <div class="flex items-center gap-2 text-xs">
-          <n-tag size="tiny" type="info">Guest 访客免密</n-tag>
+          <n-tag size="tiny" :type="status?.logged_in ? 'info' : 'default'">
+            {{ status?.logged_in ? 'Guest 访客已登录' : '未登录 (待初始化)' }}
+          </n-tag>
           <span class="text-secondary text-[11px]">
             {{ getExpiryCountdown(status?.cert_expires_at) }}
           </span>
         </div>
-        <div class="mt-2 text-[11px] text-muted truncate">
-          到期时间：<span class="mono">{{ formatExpiry(status?.cert_expires_at) }}</span>
+        <div class="mt-2 text-[11px] text-muted flex items-center justify-between">
+          <span class="truncate">到期：<span class="mono">{{ formatExpiry(status?.cert_expires_at) }}</span></span>
+          <n-button
+            size="tiny"
+            type="primary"
+            secondary
+            :disabled="!conn.status.connected || loggingIn"
+            :loading="loggingIn"
+            @click="handleLogin"
+          >
+            {{ status?.logged_in ? '刷新凭据' : '立即登录' }}
+          </n-button>
         </div>
       </n-card>
 
@@ -193,9 +206,10 @@
             <!-- 提示信息 -->
             <n-alert type="info" size="small">
               <div class="space-y-1 text-xs">
-                <div>• <strong>分流与链式代理</strong>：在「路由规则」中创建规则，将指定域名或分流目标指向 <span class="mono text-accent">proton</span> 出站，即可实现透明加密出口。</div>
-                <div>• <strong>24小时证书动态轮换</strong>：Proton v4 访客证书有效期为 24 小时，服务端后台 Watchdog 每 5 分钟健康自检，到期前 2 小时静默自动续签新证书并热重载，无需人工干预。</div>
-                <div>• <strong>节点故障自愈</strong>：每 30 秒自动探测连通性，若当前节点连续 3 次异常，会自动秒级故障转移至同地区最低负载节点。</div>
+                <div>• <strong>凭据与会话落盘</strong>：访客身份凭证与 WireGuard 私钥持久化于服务端 <code class="mono">{{ status?.session_path || '/opt/xray-panel/proton/session.json' }}</code>（权限 0600）。</div>
+                <div>• <strong>登录时机与手动触发</strong>：拉取节点或首次建立连接时自动按需登录；亦可随时在上方卡片点击「刷新凭据 / 立即登录」手动重新获取访客身份与全新 24 小时证书。</div>
+                <div>• <strong>24 小时动态轮换机制</strong>：Proton 官方证书有效期固定为 24 小时，服务端后台看门狗每 5 分钟轮询，在剩余有效期不足 2 小时时静默申请新证书并热重载 WireProxy，免去人工干预。</div>
+                <div>• <strong>链路对齐与自愈</strong>：可在修改本地 SOCKS5 端口后自动同步 Xray <span class="mono text-accent">proton</span> 出站规则；每 30 秒健康检测并在节点故障时秒级故障转移。</div>
               </div>
             </n-alert>
           </div>
@@ -228,6 +242,13 @@
             <div class="flex items-center justify-between">
               <span class="text-muted">可用服务器总数：</span>
               <span class="mono text-strong">{{ countries.reduce((acc, c) => acc + c.count, 0) || status?.total_servers || '已同步' }} 节点</span>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <span class="text-muted">凭据落盘位置：</span>
+              <span class="mono text-[11px] text-strong truncate max-w-[170px]" :title="status?.session_path || '/opt/xray-panel/proton/session.json'">
+                {{ status?.session_path || '/opt/xray-panel/proton/session.json' }}
+              </span>
             </div>
 
             <!-- 控制按钮 -->
@@ -291,6 +312,41 @@
         </n-card>
       </div>
     </div>
+
+    <!-- 修改 SOCKS5 监听端口弹窗 -->
+    <n-modal
+      v-model:show="showPortModal"
+      preset="card"
+      title="配置 Proton SOCKS5 监听端口"
+      size="small"
+      style="max-width: 420px"
+    >
+      <div class="space-y-4">
+        <div class="text-xs text-muted">
+          修改 WireProxy 本地 SOCKS5 监听端口。保存后将自动更新服务端系统设置、更新 Xray 的 proton 出站端口，并热重启 WireProxy 代理进程。
+        </div>
+        <n-form-item label="SOCKS5 监听端口 (1-65535)" :show-feedback="false">
+          <n-input-number
+            v-model:value="customPort"
+            :min="1"
+            :max="65535"
+            placeholder="默认 1080"
+            class="w-full"
+          />
+        </n-form-item>
+        <div class="flex justify-end gap-2 pt-2">
+          <n-button size="small" @click="showPortModal = false">取消</n-button>
+          <n-button
+            size="small"
+            type="primary"
+            :loading="savingPort"
+            @click="handleSavePort"
+          >
+            保存并应用
+          </n-button>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -312,6 +368,11 @@ const disconnecting = ref(false)
 const ensuringOutbound = ref(false)
 const installing = ref(false)
 const serviceActionLoading = ref('')
+const loggingIn = ref(false)
+
+const showPortModal = ref(false)
+const customPort = ref<number | null>(1080)
+const savingPort = ref(false)
 
 const status = ref<PVPNStatusResponse | null>(null)
 const countries = ref<PVPNCountryDTO[]>([])
@@ -481,12 +542,49 @@ async function handleEnsureOutbound() {
   ensuringOutbound.value = true
   try {
     await desktopApi.ensurePVPNOutbound()
-    message.success('已在 Xray 中创建 proton SOCKS5 出站 (127.0.0.1:1080)')
+    const p = status.value?.port || 1080
+    message.success(`已在 Xray 中创建 proton SOCKS5 出站 (127.0.0.1:${p})`)
     await loadData()
   } catch (err) {
     message.error('创建出站失败: ' + formatError(err))
   } finally {
     ensuringOutbound.value = false
+  }
+}
+
+function openPortModal() {
+  customPort.value = status.value?.port || 1080
+  showPortModal.value = true
+}
+
+async function handleSavePort() {
+  if (!customPort.value || customPort.value < 1 || customPort.value > 65535) {
+    message.error('请输入 1 - 65535 范围内的有效端口号')
+    return
+  }
+  savingPort.value = true
+  try {
+    const res = await desktopApi.updatePVPNConfig(customPort.value)
+    message.success(res.message || `已成功更新 SOCKS5 监听端口为 ${customPort.value}`)
+    showPortModal.value = false
+    await loadData()
+  } catch (err) {
+    message.error('更新端口失败: ' + formatError(err))
+  } finally {
+    savingPort.value = false
+  }
+}
+
+async function handleLogin() {
+  loggingIn.value = true
+  try {
+    const res = await desktopApi.loginPVPN()
+    message.success(res.message || 'Proton 访客登录与凭据刷新成功')
+    await loadData()
+  } catch (err) {
+    message.error('登录/刷新凭据失败: ' + formatError(err))
+  } finally {
+    loggingIn.value = false
   }
 }
 
