@@ -677,8 +677,10 @@ export interface XrayConfigResponse {
 
 export interface XrayApplyResponse {
   applied: boolean
-  method: 'restart' | 'hot_reload'
+  method: 'restart' | 'force_restart' | 'hot_reload' | 'unchanged' | string
   config_len: number
+  changed?: boolean
+  warnings?: string[]
   message: string
 }
 

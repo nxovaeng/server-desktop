@@ -211,7 +211,7 @@ interface WailsAppBinding {
   GetXrayStatus(): Promise<XrayStatusResponse>
   RestartXray(): Promise<XrayRestartResponse>
   GetXrayConfig(): Promise<XrayConfigResponse>
-  ApplyXrayConfig(hot: boolean): Promise<XrayApplyResponse>
+  ApplyXrayConfig(hot: boolean, force: boolean): Promise<XrayApplyResponse>
   GetSettings(): Promise<SettingsDTO>
   UpdateSettings(req: UpdateSettingsRequest): Promise<SettingsDTO>
   RestartPanelAndReconnect(): Promise<ConnectionStatus>
@@ -393,7 +393,7 @@ const rawDesktopApi = {
   getXrayStatus: () => getApp().GetXrayStatus(),
   restartXray: () => getApp().RestartXray(),
   getXrayConfig: () => getApp().GetXrayConfig(),
-  applyXrayConfig: (hot = false) => getApp().ApplyXrayConfig(hot),
+  applyXrayConfig: (hot = false, force = false) => getApp().ApplyXrayConfig(hot, force),
   getSettings: () => getApp().GetSettings(),
   updateSettings: (req: UpdateSettingsRequest) => getApp().UpdateSettings(req),
   restartPanelAndReconnect: () => getApp().RestartPanelAndReconnect(),

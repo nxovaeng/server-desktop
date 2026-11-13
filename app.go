@@ -787,14 +787,14 @@ func (a *App) GetXrayConfig() (apiclient.XrayConfigResponse, error) {
 	return c.GetXrayConfig(ctx)
 }
 
-func (a *App) ApplyXrayConfig(hot bool) (apiclient.XrayApplyResponse, error) {
+func (a *App) ApplyXrayConfig(hot bool, force bool) (apiclient.XrayApplyResponse, error) {
 	c, err := a.client()
 	if err != nil {
 		return apiclient.XrayApplyResponse{}, err
 	}
 	ctx, cancel := a.callCtx()
 	defer cancel()
-	return c.ApplyXrayConfig(ctx, hot)
+	return c.ApplyXrayConfig(ctx, hot, force)
 }
 
 func (a *App) GetSettings() (apiclient.SettingsDTO, error) {

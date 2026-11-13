@@ -1,495 +1,573 @@
 <template>
   <div class="space-y-4">
+    <!-- 顶部状态与操作栏 -->
     <div class="flex items-center justify-between flex-wrap gap-2">
-      <h2 class="text-xl font-semibold">系统设置与 Xray 配置</h2>
+      <div>
+        <h2 class="text-xl font-semibold">系统设置与服务运维</h2>
+        <div class="text-xs text-muted">管理面板基础参数、出站策略、Xray 运行状态、反代与维护工具</div>
+      </div>
       <div class="flex gap-2">
         <n-button size="small" @click="load" :disabled="!conn.status.connected" :loading="loading">刷新</n-button>
         <n-button size="small" type="primary" :disabled="!conn.status.connected" :loading="saving" @click="save">
-          保存设置
+          保存基础设置
         </n-button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <n-card title="服务端参数 (Server Mode)" size="small">
-        <n-form label-placement="left" label-width="145" size="small">
-          <n-form-item label="面板显示名称">
-            <n-input v-model:value="form.panel_title" placeholder="Xray Panel" />
-          </n-form-item>
-          <n-form-item label="公网出口地址">
-            <n-input
-              v-model:value="form.server_public_host"
-              class="mono"
-              placeholder="服务器公网 IP 或默认域名（用于订阅与 WG Endpoint）"
-            />
-          </n-form-item>
-          <n-form-item label="订阅域名 (Sub Domain)">
-            <n-input v-model:value="form.sub_domain" class="mono" placeholder="sub.example.com（可留空回落公网地址）" />
-          </n-form-item>
-          <n-form-item label="订阅路径前缀">
-            <n-input v-model:value="form.sub_path" class="mono" placeholder="/d（保存后动态热生效）" />
-          </n-form-item>
-          <n-form-item label="API 直连域名">
-            <n-input v-model:value="form.api_domain" class="mono" placeholder="api.example.com（用于 HTTPS / CDN 直连控制面）" />
-          </n-form-item>
-          <n-form-item label="Xray 日志级别">
-            <n-select
-              v-model:value="form.xray_log_level"
-              :options="[
-                { label: 'debug', value: 'debug' },
-                { label: 'info', value: 'info' },
-                { label: 'warning (推荐)', value: 'warning' },
-                { label: 'error', value: 'error' },
-                { label: 'none', value: 'none' }
-              ]"
-            />
-          </n-form-item>
-          <n-form-item label="直连出站域名策略">
-            <n-select
-              v-model:value="form.direct_domain_strategy"
-              :options="[
-                { label: 'UseIPv4 (优先 IPv4)', value: 'UseIPv4' },
-                { label: 'UseIP (解析后直连)', value: 'UseIP' },
-                { label: 'UseIPv6 (优先 IPv6)', value: 'UseIPv6' },
-                { label: 'AsIs (保持域名)', value: 'AsIs' }
-              ]"
-            />
-          </n-form-item>
-          <n-form-item label="CN IP 兜底出站">
-            <n-input v-model:value="form.cn_ip_fallback" placeholder="proton（留空关闭；填 block 则拦截 CN IP）" />
-            <template #feedback>未被用户规则命中的 CN IP 走这里：填出站 Tag（如指向 wireproxy 的 socks5 出站 proton）、block（没建 Proton 出站时直接拦截）、direct（直连）；留空则关闭此兜底。</template>
-          </n-form-item>
-          <div class="grid grid-cols-2 gap-3">
-            <n-form-item label="默认用户流量 (GB)">
-              <n-input-number v-model:value="defaultLimitGB" :min="0" class="w-full" placeholder="0 = 无限" />
-            </n-form-item>
-            <n-form-item label="默认有效天数">
-              <n-input-number v-model:value="form.default_expire_days" :min="0" class="w-full" placeholder="0 = 永不过期" />
-            </n-form-item>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <n-form-item label="流量统计 (Stats)">
-              <n-switch v-model:value="form.enable_traffic_stats" />
-            </n-form-item>
-            <n-form-item label="协议嗅探 (Sniffing)">
-              <n-switch v-model:value="form.enable_sniffing" />
-            </n-form-item>
-          </div>
-        </n-form>
+    <!-- 功能模块分页 Tab -->
+    <n-tabs v-model:value="activeTab" type="line" animated size="medium">
+      <!-- Tab 1: 基础参数与策略 -->
+      <n-tab-pane name="basic" tab="基础参数与策略">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+          <n-card title="系统核心参数" size="small">
+            <n-form label-placement="left" label-width="140" size="small">
+              <n-form-item label="面板显示名称">
+                <n-input v-model:value="form.panel_title" placeholder="Xray Panel" />
+              </n-form-item>
+              <n-form-item label="公网出口地址">
+                <n-input
+                  v-model:value="form.server_public_host"
+                  class="mono"
+                  placeholder="服务器公网 IP 或默认域名（用于订阅与 WG Endpoint）"
+                />
+              </n-form-item>
+              <n-form-item label="订阅域名 (Sub)">
+                <n-input v-model:value="form.sub_domain" class="mono" placeholder="sub.example.com（可留空回落公网地址）" />
+              </n-form-item>
+              <n-form-item label="订阅路径前缀">
+                <n-input v-model:value="form.sub_path" class="mono" placeholder="/d（保存后动态热生效）" />
+              </n-form-item>
+              <n-form-item label="API 直连域名">
+                <n-input v-model:value="form.api_domain" class="mono" placeholder="api.example.com（用于 HTTPS / CDN 直连控制面）" />
+              </n-form-item>
+              <div class="grid grid-cols-2 gap-3">
+                <n-form-item label="默认用户流量 (GB)">
+                  <n-input-number v-model:value="defaultLimitGB" :min="0" class="w-full" placeholder="0 = 无限" />
+                </n-form-item>
+                <n-form-item label="默认有效天数">
+                  <n-input-number v-model:value="form.default_expire_days" :min="0" class="w-full" placeholder="0 = 永不过期" />
+                </n-form-item>
+              </div>
+            </n-form>
+          </n-card>
 
-        <div
-          v-if="baselineInfo.month"
-          class="mt-2 pt-2 border-t border-subtle text-xs text-muted flex flex-wrap gap-4"
-        >
-          <span>当月网卡基线月份：<span class="mono text-strong">{{ baselineInfo.month }}</span></span>
-          <span>Rx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.recv) || 0) }}</span></span>
-          <span>Tx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.sent) || 0) }}</span></span>
-        </div>
-      </n-card>
-
-      <div class="space-y-4">
-        <n-card title="外观主题" size="small">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="text-xs text-muted">仅影响本机客户端界面，偏好保存在本地，下次打开自动恢复。</div>
-            <n-radio-group :value="theme.mode" size="small" @update:value="(v: 'dark' | 'light') => theme.setMode(v)">
-              <n-radio-button value="dark">深色</n-radio-button>
-              <n-radio-button value="light">浅色</n-radio-button>
-            </n-radio-group>
-          </div>
-        </n-card>
-
-        <n-card title="Xray 与面板进程控制" size="small">
           <div class="space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-secondary">
-                Xray 服务状态：
-                <n-tag size="small" :type="xrayStatus?.active ? 'success' : 'error'">
-                  {{ xrayStatus ? `${xrayStatus.active ? '运行中' : '未运行'} (${xrayStatus.status})` : '未知' }}
-                </n-tag>
-              </div>
-              <n-button size="tiny" quaternary @click="refreshXrayStatus" :disabled="!conn.status.connected">
-                检查状态
-              </n-button>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <n-button
-                size="small"
-                type="primary"
-                secondary
-                :disabled="!conn.status.connected"
-                :loading="applying"
-                @click="applyConfig(false)"
-              >
-                校验并应用 Xray 配置
-              </n-button>
-              <n-button
-                size="small"
-                type="info"
-                secondary
-                :disabled="!conn.status.connected"
-                :loading="hotReloading"
-                @click="applyConfig(true)"
-              >
-                热重载配置 (Hot)
-              </n-button>
-              <n-button
-                size="small"
-                type="warning"
-                secondary
-                :disabled="!conn.status.connected"
-                :loading="restartingXray"
-                @click="restartXray"
-              >
-                重启 Xray 服务
-              </n-button>
-            </div>
-
-            <div class="pt-3 border-t border-subtle flex items-center justify-between flex-wrap gap-2">
-              <div class="text-xs text-muted">
-                远程重启 <span class="mono">xray-panel-server</span> 进程，客户端将自动等待并重建 SSH/API 连接。
-              </div>
-              <n-popconfirm @positive-click="restartPanel">
-                <template #trigger>
-                  <n-button
-                    size="small"
-                    type="error"
-                    secondary
-                    :disabled="!conn.status.connected"
-                    :loading="conn.connecting"
-                  >
-                    重启服务端并重连
-                  </n-button>
-                </template>
-                确认远程重启 xray-panel-server？当前连接将短暂中断并自动重连。
-              </n-popconfirm>
-            </div>
-
-            <div class="pt-3 border-t border-subtle space-y-2">
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="text-xs text-muted">
-                  经当前 SSH 隧道执行远端 <span class="mono">install.sh update</span> 在线更新后端 API（仅 SSH 隧道模式可用，非
-                  <span class="mono">root</span> 需免密 <span class="mono">sudo</span>）。
-                  <span v-if="conn.status.server_version" class="ml-1 text-secondary">
-                    当前版本：<span class="mono text-accent">v{{ conn.status.server_version }}</span>
-                  </span>
+            <n-card title="流量策略与日志" size="small">
+              <n-form label-placement="left" label-width="140" size="small">
+                <n-form-item label="Xray 日志级别">
+                  <n-select
+                    v-model:value="form.xray_log_level"
+                    :options="[
+                      { label: 'debug', value: 'debug' },
+                      { label: 'info', value: 'info' },
+                      { label: 'warning (推荐)', value: 'warning' },
+                      { label: 'error', value: 'error' },
+                      { label: 'none', value: 'none' }
+                    ]"
+                  />
+                </n-form-item>
+                <n-form-item label="直连出站域名策略">
+                  <n-select
+                    v-model:value="form.direct_domain_strategy"
+                    :options="[
+                      { label: 'UseIPv4 (优先 IPv4)', value: 'UseIPv4' },
+                      { label: 'UseIP (解析后直连)', value: 'UseIP' },
+                      { label: 'UseIPv6 (优先 IPv6)', value: 'UseIPv6' },
+                      { label: 'AsIs (保持域名)', value: 'AsIs' }
+                    ]"
+                  />
+                </n-form-item>
+                <div class="grid grid-cols-2 gap-3">
+                  <n-form-item label="流量统计 (Stats)">
+                    <n-switch v-model:value="form.enable_traffic_stats" />
+                  </n-form-item>
+                  <n-form-item label="协议嗅探 (Sniffing)">
+                    <n-switch v-model:value="form.enable_sniffing" />
+                  </n-form-item>
                 </div>
-                <n-popconfirm @positive-click="updateBackendViaSSH">
+              </n-form>
+
+              <div
+                v-if="baselineInfo.month"
+                class="mt-2 pt-2 border-t border-subtle text-xs text-muted flex flex-wrap gap-4"
+              >
+                <span>当月网卡基线月份：<span class="mono text-strong">{{ baselineInfo.month }}</span></span>
+                <span>Rx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.recv) || 0) }}</span></span>
+                <span>Tx Baseline：<span class="mono text-strong">{{ formatBytes(Number(baselineInfo.sent) || 0) }}</span></span>
+              </div>
+            </n-card>
+
+            <n-card title="客户端外观主题" size="small">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="text-xs text-muted">仅影响本机桌面客户端显示风格，配置本地持久化保存。</div>
+                <n-radio-group :value="theme.mode" size="small" @update:value="(v: 'dark' | 'light') => theme.setMode(v)">
+                  <n-radio-button value="dark">深色</n-radio-button>
+                  <n-radio-button value="light">浅色</n-radio-button>
+                </n-radio-group>
+              </div>
+            </n-card>
+          </div>
+        </div>
+      </n-tab-pane>
+
+      <!-- Tab 2: Xray 运维与实时配置 -->
+      <n-tab-pane name="xray" tab="Xray 运维与实时配置">
+        <div class="space-y-4 mt-2">
+          <n-card title="Xray 进程控制与配置应用" size="small">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-3 flex-wrap text-sm">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-secondary">Xray 进程状态：</span>
+                    <n-tag size="small" :type="xrayStatus?.active ? 'success' : 'error'">
+                      {{ xrayStatus ? `${xrayStatus.active ? '运行中' : '未运行'} (${xrayStatus.status})` : '未知' }}
+                    </n-tag>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-secondary">配置生效状态：</span>
+                    <n-tag v-if="xrayDirty === true" type="warning" size="small">● 数据库有未应用更改</n-tag>
+                    <n-tag v-else-if="xrayDirty === false" type="success" size="small">✔ 配置与运行中一致</n-tag>
+                    <n-tag v-else size="small" type="default">未知</n-tag>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <n-button size="tiny" quaternary @click="refreshXrayStatus" :disabled="!conn.status.connected">
+                    检查进程状态
+                  </n-button>
+                  <n-button size="tiny" quaternary @click="loadXrayConfig" :disabled="!conn.status.connected" :loading="loadingConfig">
+                    刷新配置比对
+                  </n-button>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-subtle">
+                <n-button
+                  size="small"
+                  type="primary"
+                  :disabled="!conn.status.connected"
+                  :loading="applying"
+                  @click="applyConfig(false, false)"
+                >
+                  校验并应用 Xray 配置
+                </n-button>
+
+                <n-popconfirm @positive-click="applyConfig(false, true)">
                   <template #trigger>
                     <n-button
                       size="small"
-                      type="primary"
+                      type="warning"
                       secondary
-                      :disabled="!conn.status.connected || conn.status.mode !== 'ssh_tunnel' || updatingBackend"
-                      :loading="updatingBackend"
+                      :disabled="!conn.status.connected"
+                      :loading="forceApplying"
                     >
-                      {{ conn.status.mode === 'ssh_tunnel' ? 'SSH 在线更新后端' : 'SSH 在线更新（需 SSH 隧道）' }}
+                      强制应用并更新
                     </n-button>
                   </template>
-                  确认通过当前 SSH 隧道在线下载安装最新 xray-panel-server Release 并重启服务？
+                  强制重写 /usr/local/etc/xray/config.json 并重新校验、重启 Xray 进程，同时全量同步并重载 Nginx 反代配置（绕过无变更脏检查）。适用于入站 Tag 变更后 UDS sock 路径不同步或 Nginx 502 等异常情况。确认执行？
                 </n-popconfirm>
-              </div>
-              <div v-if="backendUpdateLog" class="space-y-1">
-                <div class="flex items-center justify-between text-[11px] text-muted">
-                  <span>远端 SSH 更新日志</span>
-                  <n-button size="tiny" quaternary @click="backendUpdateLog = ''">收起</n-button>
-                </div>
-                <pre class="p-2.5 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-56 whitespace-pre-wrap">{{ backendUpdateLog }}</pre>
-              </div>
-            </div>
-          </div>
-        </n-card>
 
-        <n-card title="Xray config.json 实时预览" size="small">
-          <template #header-extra>
-            <div class="flex gap-2 items-center">
-              <n-tag v-if="xrayDirty === true" type="warning" size="small">有未应用更改</n-tag>
-              <n-tag v-else-if="xrayDirty === false" type="success" size="small">配置与运行中一致</n-tag>
-              <n-button size="tiny" @click="loadXrayConfig" :disabled="!conn.status.connected" :loading="loadingConfig">
-                生成预览
-              </n-button>
-              <n-button size="tiny" :disabled="!xrayRaw" @click="copyConfig">复制</n-button>
-              <n-button size="tiny" type="primary" secondary :disabled="!xrayRaw" @click="exportConfig">
-                导出 JSON
-              </n-button>
-            </div>
-          </template>
-          <pre
-            v-if="xrayRaw"
-            class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-96"
-          >{{ xrayRaw }}</pre>
-          <div v-else class="text-xs text-muted py-4 text-center">
-            点击右上角「生成预览」查看当前配置生成的 Xray config.json
-          </div>
-        </n-card>
-      </div>
-    </div>
-
-    <n-card title="域名反代与公网暴露（API HTTPS/CDN · 订阅 · Cloudflare Tunnel）" size="small">
-      <n-tabs type="line" animated size="small">
-        <n-tab-pane name="api" tab="控制面 API 域名反代 (HTTPS / CDN)">
-          <div class="space-y-3 text-xs">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <n-tag size="small" :type="form.api_nginx_enabled ? 'success' : 'default'">
-                  {{ form.api_nginx_enabled ? 'API Nginx 反代：已启用' : 'API Nginx 反代：未启用' }}
-                </n-tag>
-                <span class="text-secondary">
-                  直连地址：
-                  <span class="mono text-accent">{{ form.api_domain ? `https://${form.api_domain}` : '(未填写 api_domain)' }}</span>
-                </span>
-                <n-button
-                  v-if="form.api_domain"
-                  size="tiny"
-                  quaternary
-                  @click="copyText(`https://${form.api_domain}`, '直连 API URL')"
-                >
-                  复制直连 URL
-                </n-button>
-              </div>
-              <div class="flex gap-2">
-                <n-button
-                  size="small"
-                  type="primary"
-                  secondary
-                  :disabled="!conn.status.connected"
-                  :loading="applyingAPINginx"
-                  @click="enableAPINginx"
-                >
-                  保存域名并开启 API 反代
-                </n-button>
-                <n-button
-                  v-if="form.api_nginx_enabled"
-                  size="small"
-                  type="warning"
-                  secondary
-                  :disabled="!conn.status.connected"
-                  :loading="disablingAPINginx"
-                  @click="disableAPINginx"
-                >
-                  停用 API 反代
-                </n-button>
-              </div>
-            </div>
-            <n-alert type="info" size="small">
-              生成仅放行 <span class="mono">/api/v1/</span> 的 Nginx HTTPS 反代（自动关闭 SSE 缓冲以支持实时日志，根路径 <span class="mono">/</span> 返回 404）；支持过 Cloudflare CDN（推荐上传 Cloudflare Origin CA 证书或签发 ACME 证书并设 SSL 为 <span class="mono">Full (Strict)</span>），开启后可在桌面端新增节点时选择「HTTPS / 本地直连」直接接入。如与订阅或入站共用同一域名，会自动合并于同一份 Nginx 站点配置。
-            </n-alert>
-            <div v-if="apiNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
-              {{ apiNginxResult }}
-            </div>
-          </div>
-        </n-tab-pane>
-
-        <n-tab-pane name="nginx" tab="订阅域名 Nginx 反代">
-          <div class="space-y-3 text-xs">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <n-tag size="small" :type="form.sub_nginx_enabled ? 'success' : 'default'">
-                  {{ form.sub_nginx_enabled ? '订阅 Nginx 反代：已启用' : '订阅 Nginx 反代：未启用' }}
-                </n-tag>
-                <span class="text-secondary">
-                  当前目标：<span class="mono">{{ form.sub_domain || '(未填写 sub_domain)' }}</span> · 仅放行前缀
-                  <span class="mono text-accent">{{ form.sub_path || '/d' }}/</span>
-                </span>
-              </div>
-              <div class="flex gap-2">
-                <n-button
-                  size="small"
-                  type="primary"
-                  secondary
-                  :disabled="!conn.status.connected"
-                  :loading="applyingSubNginx"
-                  @click="enableSubNginx"
-                >
-                  保存域名并应用订阅 Nginx
-                </n-button>
-                <n-button
-                  v-if="form.sub_nginx_enabled"
-                  size="small"
-                  type="warning"
-                  secondary
-                  :disabled="!conn.status.connected"
-                  :loading="disablingSubNginx"
-                  @click="disableSubNginx"
-                >
-                  停用反代
-                </n-button>
-              </div>
-            </div>
-            <n-alert type="info" size="small">
-              仅代理 <span class="mono">{{ form.sub_path || '/d' }}/</span> 到面板回环地址（<span class="mono">/api/v1/*</span> 在公网访问返回 404）；会自动从「域名证书管理」中精确匹配或通配符匹配 TLS 证书。如订阅域名同时绑定了 Xray 入站，也会自动合并保留于同一份站点配置中。
-            </n-alert>
-            <div v-if="subNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
-              {{ subNginxResult }}
-            </div>
-          </div>
-        </n-tab-pane>
-
-        <n-tab-pane name="cf" tab="Cloudflare Tunnel (免开放 443 与服务器证书)">
-          <div class="space-y-3 text-xs">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <n-tag size="small" :type="cfStatus?.installed ? 'success' : 'default'">
-                  {{ cfStatus?.installed ? 'cloudflared 已安装' : '未安装 cloudflared' }}
-                </n-tag>
-                <n-tag size="small" :type="cfStatus?.active ? 'success' : 'warning'">
-                  服务状态：{{ cfStatus?.status || '未知' }}
-                </n-tag>
-                <span v-if="cfStatus?.version" class="mono text-muted">{{ cfStatus.version }}</span>
-              </div>
-              <div class="flex gap-2 flex-wrap">
                 <n-button
                   size="small"
                   type="info"
                   secondary
                   :disabled="!conn.status.connected"
-                  :loading="installingCF"
-                  @click="installCF"
+                  :loading="hotReloading"
+                  @click="applyConfig(true, false)"
                 >
-                  一键安装 cloudflared
+                  热重载配置 (Hot)
                 </n-button>
-                <n-button size="small" quaternary :disabled="!conn.status.connected" @click="refreshCFStatus">
-                  刷新状态
+
+                <n-button
+                  size="small"
+                  secondary
+                  :disabled="!conn.status.connected"
+                  :loading="restartingXray"
+                  @click="restartXray"
+                >
+                  仅重启 Xray 进程
                 </n-button>
               </div>
-            </div>
 
-            <div class="flex items-center gap-2 flex-wrap">
-              <n-input
-                v-model:value="cfToken"
-                type="password"
-                show-password-on="click"
-                size="small"
-                class="mono flex-1 min-w-[280px]"
-                placeholder="粘贴 Cloudflare Zero Trust Tunnel Token（或完整 cloudflared service install ... 命令）"
-              />
-              <n-button
-                size="small"
-                type="primary"
-                :disabled="!conn.status.connected"
-                :loading="settingUpCF"
-                @click="setupCF"
-              >
-                配置并启动 Tunnel
-              </n-button>
-              <n-button
-                size="small"
-                :disabled="!conn.status.connected || !cfStatus?.service_installed"
-                :loading="cfActionLoading === 'restart'"
-                @click="cfAction('restart')"
-              >
-                重启
-              </n-button>
-              <n-button
-                size="small"
-                type="warning"
-                secondary
-                :disabled="!conn.status.connected || !cfStatus?.service_installed"
-                :loading="cfActionLoading === 'stop'"
-                @click="cfAction('stop')"
-              >
-                停止
-              </n-button>
-              <n-popconfirm @positive-click="cfAction('uninstall')">
-                <template #trigger>
+              <n-alert type="info" size="small">
+                <div class="space-y-1">
+                  <div><strong>说明：</strong></div>
+                  <div>• <strong>校验并应用</strong>：校验通过后原子写入生产配置并重启 Xray，无变更时跳过（不碰磁盘与 Nginx）。</div>
+                  <div>• <strong>强制应用并更新</strong>：跳过脏检查，强制重写 config.json、重启 Xray，并<strong>全量重新生成与重载 Nginx 反代配置</strong>（一键修复入站标签修改后 socket 路径不一致或 502 问题）。</div>
+                  <div>• <strong>仅重启 Xray 进程</strong>：仅重启 systemd xray 单元，不重新从数据库生成配置。</div>
+                </div>
+              </n-alert>
+            </div>
+          </n-card>
+
+          <n-card title="Xray config.json 实时预览" size="small">
+            <template #header-extra>
+              <div class="flex gap-2 items-center">
+                <n-tag v-if="xrayDirty === true" type="warning" size="small">有未应用更改</n-tag>
+                <n-tag v-else-if="xrayDirty === false" type="success" size="small">配置与运行中一致</n-tag>
+                <n-button size="tiny" @click="loadXrayConfig" :disabled="!conn.status.connected" :loading="loadingConfig">
+                  生成预览
+                </n-button>
+                <n-button size="tiny" :disabled="!xrayRaw" @click="copyConfig">复制</n-button>
+                <n-button size="tiny" type="primary" secondary :disabled="!xrayRaw" @click="exportConfig">
+                  导出 JSON
+                </n-button>
+              </div>
+            </template>
+            <pre
+              v-if="xrayRaw"
+              class="p-3 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-[500px]"
+            >{{ xrayRaw }}</pre>
+            <div v-else class="text-xs text-muted py-6 text-center">
+              点击右上角「生成预览」查看当前数据库状态生成的 Xray config.json
+            </div>
+          </n-card>
+        </div>
+      </n-tab-pane>
+
+      <!-- Tab 3: 域名与 Nginx 反代 -->
+      <n-tab-pane name="proxy" tab="域名与 Nginx 反代">
+        <div class="space-y-4 mt-2">
+          <!-- API Nginx 反代 -->
+          <n-card title="控制面 API 域名反代 (HTTPS / CDN 直连)" size="small">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <n-tag size="small" :type="form.api_nginx_enabled ? 'success' : 'default'">
+                    {{ form.api_nginx_enabled ? 'API Nginx 反代：已启用' : 'API Nginx 反代：未启用' }}
+                  </n-tag>
+                  <span class="text-secondary">
+                    直连地址：
+                    <span class="mono text-accent">{{ form.api_domain ? `https://${form.api_domain}` : '(未填写 api_domain)' }}</span>
+                  </span>
+                  <n-button
+                    v-if="form.api_domain"
+                    size="tiny"
+                    quaternary
+                    @click="copyText(`https://${form.api_domain}`, '直连 API URL')"
+                  >
+                    复制直连 URL
+                  </n-button>
+                </div>
+                <div class="flex gap-2">
                   <n-button
                     size="small"
-                    type="error"
-                    quaternary
-                    :disabled="!conn.status.connected || !cfStatus?.service_installed"
-                    :loading="cfActionLoading === 'uninstall'"
+                    type="primary"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="applyingAPINginx"
+                    @click="enableAPINginx"
                   >
-                    卸载服务
+                    保存域名并开启 API 反代
                   </n-button>
-                </template>
-                确认从服务端卸载 cloudflared 系统服务？
-              </n-popconfirm>
-            </div>
-
-            <div v-if="cfStatus" class="p-3 rounded surface-code border border-subtle space-y-1.5 text-secondary">
-              <div class="font-medium text-strong">Cloudflare Zero Trust 控制台 Public Hostname 推荐映射：</div>
-              <div class="flex flex-wrap gap-4">
-                <span>Subdomain / Domain：<span class="mono text-accent">{{ form.sub_domain || 'sub.example.com' }}</span></span>
-                <span>
-                  Path (强烈建议限制仅暴露订阅)：
-                  <span class="mono text-accent">{{ cfStatus.recommended_path_rule }}</span>
-                </span>
-                <span>
-                  Service：
-                  <span class="mono text-accent">{{ cfStatus.recommended_service }}</span>
-                </span>
+                  <n-button
+                    v-if="form.api_nginx_enabled"
+                    size="small"
+                    type="warning"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="disablingAPINginx"
+                    @click="disableAPINginx"
+                  >
+                    停用 API 反代
+                  </n-button>
+                </div>
               </div>
-              <div class="text-muted">
-                仅将 <span class="mono">{{ cfStatus.recommended_path_rule }}</span> 指向 <span class="mono">{{ cfStatus.recommended_service }}</span> 即可让客户端访问订阅链接，同时保证 <span class="mono">/api/v1/*</span> 不暴露在公网。
+              <n-alert type="info" size="small">
+                生成仅放行 <span class="mono">/api/v1/</span> 的 Nginx HTTPS 反代（自动关闭 SSE 缓冲以支持实时日志，根路径 <span class="mono">/</span> 返回 404）；支持过 Cloudflare CDN（推荐上传 Cloudflare Origin CA 证书或签发 ACME 证书并设 SSL 为 <span class="mono">Full (Strict)</span>），开启后可在桌面端新增节点时选择「HTTPS / 本地直连」直接接入。如与订阅或入站共用同一域名，会自动合并于同一份 Nginx 站点配置。
+              </n-alert>
+              <div v-if="apiNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
+                {{ apiNginxResult }}
               </div>
             </div>
-          </div>
-        </n-tab-pane>
+          </n-card>
 
-        <n-tab-pane name="speedtest" tab="测速源站 (优选 IP)">
-          <div class="space-y-3 text-xs">
-            <div class="flex items-center justify-between flex-wrap gap-2">
+          <!-- 订阅域名 Nginx 反代 -->
+          <n-card title="订阅服务 Nginx 反代配置" size="small">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <n-tag size="small" :type="form.sub_nginx_enabled ? 'success' : 'default'">
+                    {{ form.sub_nginx_enabled ? '订阅 Nginx 反代：已启用' : '订阅 Nginx 反代：未启用' }}
+                  </n-tag>
+                  <span class="text-secondary">
+                    当前目标：<span class="mono">{{ form.sub_domain || '(未填写 sub_domain)' }}</span> · 仅放行前缀
+                    <span class="mono text-accent">{{ form.sub_path || '/d' }}/</span>
+                  </span>
+                </div>
+                <div class="flex gap-2">
+                  <n-button
+                    size="small"
+                    type="primary"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="applyingSubNginx"
+                    @click="enableSubNginx"
+                  >
+                    保存域名并应用订阅 Nginx
+                  </n-button>
+                  <n-button
+                    v-if="form.sub_nginx_enabled"
+                    size="small"
+                    type="warning"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="disablingSubNginx"
+                    @click="disableSubNginx"
+                  >
+                    停用反代
+                  </n-button>
+                </div>
+              </div>
+              <n-alert type="info" size="small">
+                仅代理 <span class="mono">{{ form.sub_path || '/d' }}/</span> 到面板回环地址（<span class="mono">/api/v1/*</span> 在公网访问返回 404）；会自动从「域名证书管理」中精确匹配或通配符匹配 TLS 证书。如订阅域名同时绑定了 Xray 入站，也会自动合并保留于同一份站点配置中。
+              </n-alert>
+              <div v-if="subNginxResult" class="p-2.5 rounded surface-code border border-subtle text-xs text-secondary">
+                {{ subNginxResult }}
+              </div>
+            </div>
+          </n-card>
+        </div>
+      </n-tab-pane>
+
+      <!-- Tab 4: Cloudflare Tunnel -->
+      <n-tab-pane name="tunnel" tab="Cloudflare Tunnel">
+        <div class="space-y-4 mt-2">
+          <n-card title="Cloudflare Zero Trust Tunnel (穿透模式，免开放 443 与证书)" size="small">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <n-tag size="small" :type="cfStatus?.installed ? 'success' : 'default'">
+                    {{ cfStatus?.installed ? 'cloudflared 已安装' : '未安装 cloudflared' }}
+                  </n-tag>
+                  <n-tag size="small" :type="cfStatus?.active ? 'success' : 'warning'">
+                    服务状态：{{ cfStatus?.status || '未知' }}
+                  </n-tag>
+                  <span v-if="cfStatus?.version" class="mono text-muted">{{ cfStatus.version }}</span>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                  <n-button
+                    size="small"
+                    type="info"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="installingCF"
+                    @click="installCF"
+                  >
+                    一键安装 cloudflared
+                  </n-button>
+                  <n-button size="small" quaternary :disabled="!conn.status.connected" @click="refreshCFStatus">
+                    刷新状态
+                  </n-button>
+                </div>
+              </div>
+
               <div class="flex items-center gap-2 flex-wrap">
-                <n-tag size="small" :type="speedtestStatus?.enabled ? 'success' : 'default'">
-                  {{ speedtestStatus?.enabled ? '测速源站已开启' : '测速源站已关闭' }}
-                </n-tag>
-                <span v-if="speedtestStatus?.file_exists" class="text-muted">
-                  测试文件 50MB（{{ formatBytes(speedtestStatus.file_size) }}）
-                </span>
-              </div>
-              <div class="flex gap-2 flex-wrap">
+                <n-input
+                  v-model:value="cfToken"
+                  type="password"
+                  show-password-on="click"
+                  size="small"
+                  class="mono flex-1 min-w-[280px]"
+                  placeholder="粘贴 Cloudflare Zero Trust Tunnel Token（或完整 cloudflared service install ... 命令）"
+                />
                 <n-button
-                  v-if="!speedtestStatus?.enabled"
                   size="small"
                   type="primary"
-                  :disabled="!conn.status.connected || !speedtestForm.domain.trim()"
-                  :loading="togglingSpeedtest"
-                  @click="startSpeedtest"
+                  :disabled="!conn.status.connected"
+                  :loading="settingUpCF"
+                  @click="setupCF"
                 >
-                  启动测速源站
+                  配置并启动 Tunnel
                 </n-button>
                 <n-button
-                  v-else
+                  size="small"
+                  :disabled="!conn.status.connected || !cfStatus?.service_installed"
+                  :loading="cfActionLoading === 'restart'"
+                  @click="cfAction('restart')"
+                >
+                  重启
+                </n-button>
+                <n-button
                   size="small"
                   type="warning"
                   secondary
-                  :disabled="!conn.status.connected"
-                  :loading="togglingSpeedtest"
-                  @click="stopSpeedtest"
+                  :disabled="!conn.status.connected || !cfStatus?.service_installed"
+                  :loading="cfActionLoading === 'stop'"
+                  @click="cfAction('stop')"
                 >
-                  停止测速源站
+                  停止
                 </n-button>
-                <n-button size="small" quaternary :disabled="!conn.status.connected" @click="refreshSpeedtest">
-                  刷新状态
-                </n-button>
+                <n-popconfirm @positive-click="cfAction('uninstall')">
+                  <template #trigger>
+                    <n-button
+                      size="small"
+                      type="error"
+                      quaternary
+                      :disabled="!conn.status.connected || !cfStatus?.service_installed"
+                      :loading="cfActionLoading === 'uninstall'"
+                    >
+                      卸载服务
+                    </n-button>
+                  </template>
+                  确认从服务端卸载 cloudflared 系统服务？
+                </n-popconfirm>
+              </div>
+
+              <div v-if="cfStatus" class="p-3 rounded surface-code border border-subtle space-y-1.5 text-secondary">
+                <div class="font-medium text-strong">Cloudflare Zero Trust 控制台 Public Hostname 推荐映射：</div>
+                <div class="flex flex-wrap gap-4">
+                  <span>Subdomain / Domain：<span class="mono text-accent">{{ form.sub_domain || 'sub.example.com' }}</span></span>
+                  <span>
+                    Path (强烈建议限制仅暴露订阅)：
+                    <span class="mono text-accent">{{ cfStatus.recommended_path_rule }}</span>
+                  </span>
+                  <span>
+                    Service：
+                    <span class="mono text-accent">{{ cfStatus.recommended_service }}</span>
+                  </span>
+                </div>
+                <div class="text-muted">
+                  仅将 <span class="mono">{{ cfStatus.recommended_path_rule }}</span> 指向 <span class="mono">{{ cfStatus.recommended_service }}</span> 即可让客户端访问订阅链接，同时保证 <span class="mono">/api/v1/*</span> 不暴露在公网。
+                </div>
               </div>
             </div>
+          </n-card>
+        </div>
+      </n-tab-pane>
 
-            <div class="grid grid-cols-2 gap-3">
-              <n-form-item label="测速域名">
-                <n-input v-model:value="speedtestForm.domain" placeholder="jp-speed.example.com" />
-              </n-form-item>
-              <n-form-item label="Subpath（可改，避免地址被猜到刷流量）">
-                <n-input v-model:value="speedtestForm.sub_path" placeholder="/speedtest" />
-              </n-form-item>
-            </div>
-            <div class="flex gap-2">
-              <n-button size="small" type="primary" secondary :disabled="!conn.status.connected" :loading="savingSpeedtest" @click="saveSpeedtest">
-                保存域名与 Subpath
-              </n-button>
-            </div>
+      <!-- Tab 5: 服务端维护与升级 -->
+      <n-tab-pane name="maintenance" tab="服务端维护与升级">
+        <div class="space-y-4 mt-2">
+          <!-- 远程重启与 SSH 在线更新 -->
+          <n-card title="服务端进程管理与在线更新" size="small">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div class="text-sm font-medium">重启 xray-panel-server 服务</div>
+                  <div class="text-xs text-muted">
+                    远程重启服务端进程，客户端将自动等待并平滑重建 SSH / API 连接。
+                  </div>
+                </div>
+                <n-popconfirm @positive-click="restartPanel">
+                  <template #trigger>
+                    <n-button
+                      size="small"
+                      type="error"
+                      secondary
+                      :disabled="!conn.status.connected"
+                      :loading="conn.connecting"
+                    >
+                      重启服务端并重连
+                    </n-button>
+                  </template>
+                  确认远程重启 xray-panel-server？当前连接将短暂中断并自动重连。
+                </n-popconfirm>
+              </div>
 
-            <div v-if="speedtestStatus?.enabled && speedtestStatus.url" class="p-2.5 rounded surface-code border border-subtle text-secondary">
-              <div>测速地址：<span class="mono text-accent">{{ speedtestStatus.url }}</span></div>
-              <div class="text-muted">把这个地址填进客户端优选脚本的 TEST_URL；测完记得点「停止测速源站」，避免地址暴露后被人刷流量。</div>
+              <div class="pt-4 border-t border-subtle space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <div class="text-sm font-medium">SSH 隧道在线更新后端 API</div>
+                    <div class="text-xs text-muted">
+                      经当前 SSH 隧道执行远端 <span class="mono">install.sh update</span> 在线拉取最新 Release 并重启（仅 SSH 隧道模式可用，非 root 需免密 sudo）。
+                      <span v-if="conn.status.server_version" class="ml-1 text-secondary font-medium">
+                        当前服务端版本：<span class="mono text-accent">v{{ conn.status.server_version }}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <n-popconfirm @positive-click="updateBackendViaSSH">
+                    <template #trigger>
+                      <n-button
+                        size="small"
+                        type="primary"
+                        secondary
+                        :disabled="!conn.status.connected || conn.status.mode !== 'ssh_tunnel' || updatingBackend"
+                        :loading="updatingBackend"
+                      >
+                        {{ conn.status.mode === 'ssh_tunnel' ? 'SSH 在线更新后端' : 'SSH 在线更新（需 SSH 隧道）' }}
+                      </n-button>
+                    </template>
+                    确认通过当前 SSH 隧道在线下载安装最新 xray-panel-server Release 并重启服务？
+                  </n-popconfirm>
+                </div>
+
+                <div v-if="backendUpdateLog" class="space-y-1">
+                  <div class="flex items-center justify-between text-[11px] text-muted">
+                    <span>远端 SSH 更新日志</span>
+                    <n-button size="tiny" quaternary @click="backendUpdateLog = ''">收起</n-button>
+                  </div>
+                  <pre class="p-2.5 rounded surface-code border border-subtle mono text-xs overflow-auto max-h-56 whitespace-pre-wrap">{{ backendUpdateLog }}</pre>
+                </div>
+              </div>
             </div>
-            <n-alert type="info" size="small">
-              默认关闭：只在测速轮次里开启，测完即停。改 Subpath 会立即重写 nginx 配置并重载，旧地址随即失效。
-            </n-alert>
-          </div>
-        </n-tab-pane>
-      </n-tabs>
-    </n-card>
+          </n-card>
+
+          <!-- 测速源站 (优选 IP) -->
+          <n-card title="测速源站配置 (用于优选 IP 节点)" size="small">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <n-tag size="small" :type="speedtestStatus?.enabled ? 'success' : 'default'">
+                    {{ speedtestStatus?.enabled ? '测速源站已开启' : '测速源站已关闭' }}
+                  </n-tag>
+                  <span v-if="speedtestStatus?.file_exists" class="text-muted">
+                    测试文件 50MB（{{ formatBytes(speedtestStatus.file_size) }}）
+                  </span>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                  <n-button
+                    v-if="!speedtestStatus?.enabled"
+                    size="small"
+                    type="primary"
+                    :disabled="!conn.status.connected || !speedtestForm.domain.trim()"
+                    :loading="togglingSpeedtest"
+                    @click="startSpeedtest"
+                  >
+                    启动测速源站
+                  </n-button>
+                  <n-button
+                    v-else
+                    size="small"
+                    type="warning"
+                    secondary
+                    :disabled="!conn.status.connected"
+                    :loading="togglingSpeedtest"
+                    @click="stopSpeedtest"
+                  >
+                    停止测速源站
+                  </n-button>
+                  <n-button size="small" quaternary :disabled="!conn.status.connected" @click="refreshSpeedtest">
+                    刷新状态
+                  </n-button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <n-form-item label="测速域名">
+                  <n-input v-model:value="speedtestForm.domain" placeholder="jp-speed.example.com" />
+                </n-form-item>
+                <n-form-item label="Subpath（可改，避免地址被猜到刷流量）">
+                  <n-input v-model:value="speedtestForm.sub_path" placeholder="/speedtest" />
+                </n-form-item>
+              </div>
+              <div class="flex gap-2">
+                <n-button size="small" type="primary" secondary :disabled="!conn.status.connected" :loading="savingSpeedtest" @click="saveSpeedtest">
+                  保存域名与 Subpath
+                </n-button>
+              </div>
+
+              <div v-if="speedtestStatus?.enabled && speedtestStatus.url" class="p-2.5 rounded surface-code border border-subtle text-secondary">
+                <div>测速地址：<span class="mono text-accent">{{ speedtestStatus.url }}</span></div>
+                <div class="text-muted">把这个地址填进客户端优选脚本的 TEST_URL；测完记得点「停止测速源站」，避免地址暴露后被人刷流量。</div>
+              </div>
+              <n-alert type="info" size="small">
+                默认关闭：只在测速轮次里开启，测完即停。改 Subpath 会立即重写 nginx 配置并重载，旧地址随即失效。
+              </n-alert>
+            </div>
+          </n-card>
+        </div>
+      </n-tab-pane>
+    </n-tabs>
   </div>
 </template>
 
@@ -505,9 +583,12 @@ const conn = useConnectionStore()
 const theme = useThemeStore()
 const message = useMessage()
 
+const activeTab = ref('basic')
+
 const loading = ref(false)
 const saving = ref(false)
 const applying = ref(false)
+const forceApplying = ref(false)
 const hotReloading = ref(false)
 const restartingXray = ref(false)
 const updatingBackend = ref(false)
@@ -532,7 +613,7 @@ const cfActionLoading = ref('')
 
 const xrayStatus = ref<XrayStatusResponse | null>(null)
 const xrayRaw = ref('')
-// 脏状态：true=有未应用更改，false=与运行中一致，null=未知（后端未返回 current_hash 时不展示）
+// 脏状态：true=有未应用更改，false=与运行中一致，null=未知
 const xrayDirty = ref<boolean | null>(null)
 const defaultLimitGB = ref(0)
 
@@ -552,7 +633,6 @@ const form = reactive({
   server_public_host: '',
   xray_log_level: 'warning' as XrayLogLevel,
   direct_domain_strategy: 'UseIPv4' as DirectDomainStrategy,
-  cn_ip_fallback: 'proton',
   enable_traffic_stats: true,
   enable_sniffing: true,
   default_expire_days: 30
@@ -579,7 +659,6 @@ async function load() {
       server_public_host: settings.server_public_host,
       xray_log_level: settings.xray_log_level,
       direct_domain_strategy: settings.direct_domain_strategy,
-      cn_ip_fallback: settings.cn_ip_fallback ?? 'proton',
       enable_traffic_stats: settings.enable_traffic_stats,
       enable_sniffing: settings.enable_sniffing,
       default_expire_days: settings.default_expire_days
@@ -613,7 +692,6 @@ async function save() {
       server_public_host: form.server_public_host.trim(),
       xray_log_level: form.xray_log_level,
       direct_domain_strategy: form.direct_domain_strategy,
-      cn_ip_fallback: form.cn_ip_fallback.trim(),
       enable_traffic_stats: form.enable_traffic_stats,
       enable_sniffing: form.enable_sniffing,
       default_traffic_limit: Math.max(0, Math.round(defaultLimitGB.value || 0)) * 1024 * 1024 * 1024,
@@ -652,21 +730,24 @@ async function loadXrayConfig() {
   }
 }
 
-async function applyConfig(hot: boolean) {
-  if (hot) {
+async function applyConfig(hot: boolean, force = false) {
+  if (force) {
+    forceApplying.value = true
+  } else if (hot) {
     hotReloading.value = true
   } else {
     applying.value = true
   }
   try {
-    const res = await desktopApi.applyXrayConfig(hot)
-    message.success(res.message || (hot ? '热重载成功' : '已校验并应用 Xray 配置'))
+    const res = await desktopApi.applyXrayConfig(hot, force)
+    message.success(res.message || (force ? '已强制应用并更新配置' : hot ? '热重载成功' : '已校验并应用 Xray 配置'))
     await Promise.all([refreshXrayStatus(), loadXrayConfig()])
   } catch (err) {
-    message.error('应用配置失败: ' + formatError(err))
+    message.error((force ? '强制应用失败: ' : '应用配置失败: ') + formatError(err))
   } finally {
     applying.value = false
     hotReloading.value = false
+    forceApplying.value = false
   }
 }
 
@@ -737,7 +818,7 @@ async function exportConfig() {
 
 async function enableSubNginx() {
   if (!form.sub_domain.trim()) {
-    message.warning('请先在左侧表单填写订阅域名 (Sub Domain)')
+    message.warning('请先在「基础参数与策略」填写订阅域名 (Sub Domain)')
     return
   }
   applyingSubNginx.value = true
@@ -781,7 +862,7 @@ async function copyText(text: string, label: string) {
 
 async function enableAPINginx() {
   if (!form.api_domain.trim()) {
-    message.warning('请先在左侧表单填写 API 直连域名')
+    message.warning('请先在「基础参数与策略」填写 API 直连域名')
     return
   }
   applyingAPINginx.value = true

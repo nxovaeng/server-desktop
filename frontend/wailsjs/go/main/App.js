@@ -10,8 +10,8 @@ export function ApplySubscriptionNginx() {
   return window['go']['main']['App']['ApplySubscriptionNginx']();
 }
 
-export function ApplyXrayConfig(arg1) {
-  return window['go']['main']['App']['ApplyXrayConfig'](arg1);
+export function ApplyXrayConfig(arg1, arg2) {
+  return window['go']['main']['App']['ApplyXrayConfig'](arg1, arg2);
 }
 
 export function CFTunnelServiceAction(arg1) {
@@ -158,6 +158,10 @@ export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }
 
+export function GetSpeedtestStatus() {
+  return window['go']['main']['App']['GetSpeedtestStatus']();
+}
+
 export function GetUser(arg1) {
   return window['go']['main']['App']['GetUser'](arg1);
 }
@@ -274,6 +278,14 @@ export function SetupWGEnv() {
   return window['go']['main']['App']['SetupWGEnv']();
 }
 
+export function StartSpeedtest() {
+  return window['go']['main']['App']['StartSpeedtest']();
+}
+
+export function StopSpeedtest() {
+  return window['go']['main']['App']['StopSpeedtest']();
+}
+
 export function TestLatency() {
   return window['go']['main']['App']['TestLatency']();
 }
@@ -324,6 +336,10 @@ export function UpdateRouting(arg1, arg2) {
 
 export function UpdateSettings(arg1) {
   return window['go']['main']['App']['UpdateSettings'](arg1);
+}
+
+export function UpdateSpeedtest(arg1) {
+  return window['go']['main']['App']['UpdateSpeedtest'](arg1);
 }
 
 export function UpdateUser(arg1, arg2) {

@@ -135,44 +135,6 @@ export namespace apiclient {
 	        this.recommended_path_rule = source["recommended_path_rule"];
 	    }
 	}
-	export class SpeedtestStatus {
-	    enabled: boolean;
-	    domain: string;
-	    sub_path: string;
-	    file_exists: boolean;
-	    file_size: number;
-	    url: string;
-	    config_path: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new SpeedtestStatus(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.enabled = source["enabled"];
-	        this.domain = source["domain"];
-	        this.sub_path = source["sub_path"];
-	        this.file_exists = source["file_exists"];
-	        this.file_size = source["file_size"];
-	        this.url = source["url"];
-	        this.config_path = source["config_path"];
-	    }
-	}
-	export class UpdateSpeedtestRequest {
-	    domain?: string;
-	    sub_path?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateSpeedtestRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.domain = source["domain"];
-	        this.sub_path = source["sub_path"];
-	    }
-	}
 	export class CFTunnelActionResponse {
 	    action: string;
 	    success: boolean;
@@ -1347,6 +1309,30 @@ export namespace apiclient {
 	        this.monthly_net_baseline_month = source["monthly_net_baseline_month"];
 	    }
 	}
+	export class SpeedtestStatus {
+	    enabled: boolean;
+	    domain: string;
+	    sub_path: string;
+	    file_exists: boolean;
+	    file_size: number;
+	    url: string;
+	    config_path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SpeedtestStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.domain = source["domain"];
+	        this.sub_path = source["sub_path"];
+	        this.file_exists = source["file_exists"];
+	        this.file_size = source["file_size"];
+	        this.url = source["url"];
+	        this.config_path = source["config_path"];
+	    }
+	}
 	export class SubscriptionNginxResponse {
 	    enabled: boolean;
 	    domain: string;
@@ -1455,6 +1441,20 @@ export namespace apiclient {
 	        this.default_expire_days = source["default_expire_days"];
 	        this.direct_domain_strategy = source["direct_domain_strategy"];
 	        this.cn_ip_fallback = source["cn_ip_fallback"];
+	    }
+	}
+	export class UpdateSpeedtestRequest {
+	    domain?: string;
+	    sub_path?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateSpeedtestRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = source["domain"];
+	        this.sub_path = source["sub_path"];
 	    }
 	}
 	export class UpdateUserRequest {
@@ -2213,6 +2213,8 @@ export namespace apiclient {
 	    applied: boolean;
 	    method: string;
 	    config_len: number;
+	    changed: boolean;
+	    warnings?: string[];
 	    message: string;
 	
 	    static createFrom(source: any = {}) {
@@ -2224,6 +2226,8 @@ export namespace apiclient {
 	        this.applied = source["applied"];
 	        this.method = source["method"];
 	        this.config_len = source["config_len"];
+	        this.changed = source["changed"];
+	        this.warnings = source["warnings"];
 	        this.message = source["message"];
 	    }
 	}

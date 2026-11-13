@@ -393,12 +393,19 @@ func (c *Client) RestartXray(ctx context.Context) (XrayRestartResponse, error) {
 func (c *Client) GetXrayConfig(ctx context.Context) (XrayConfigResponse, error) {
 	return doEnvelope[XrayConfigResponse](ctx, c, http.MethodGet, "/api/v1/xray/config", nil)
 }
-func (c *Client) ApplyXrayConfig(ctx context.Context, hot bool) (XrayApplyResponse, error) {
-	q := ""
+func (c *Client) ApplyXrayConfig(ctx context.Context, hot, force bool) (XrayApplyResponse, error) {
+	var q []string
 	if hot {
-		q = "?hot=true"
+		q = append(q, "hot=true")
 	}
-	return doEnvelope[XrayApplyResponse](ctx, c, http.MethodPost, "/api/v1/xray/apply"+q, nil)
+	if force {
+		q = append(q, "force=true")
+	}
+	query := ""
+	if len(q) > 0 {
+		query = "?" + strings.Join(q, "&")
+	}
+	return doEnvelope[XrayApplyResponse](ctx, c, http.MethodPost, "/api/v1/xray/apply"+query, XrayApplyRequest{Hot: hot, Force: force})
 }
 func (c *Client) GetSettings(ctx context.Context) (SettingsDTO, error) {
 	return doEnvelope[SettingsDTO](ctx, c, http.MethodGet, "/api/v1/settings", nil)

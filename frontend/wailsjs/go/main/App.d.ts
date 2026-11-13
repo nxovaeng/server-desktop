@@ -10,7 +10,7 @@ export function ApplyAPINginx():Promise<apiclient.APINginxResponse>;
 
 export function ApplySubscriptionNginx():Promise<apiclient.SubscriptionNginxResponse>;
 
-export function ApplyXrayConfig(arg1:boolean):Promise<apiclient.XrayApplyResponse>;
+export function ApplyXrayConfig(arg1:boolean,arg2:boolean):Promise<apiclient.XrayApplyResponse>;
 
 export function CFTunnelServiceAction(arg1:string):Promise<apiclient.CFTunnelActionResponse>;
 
@@ -84,6 +84,8 @@ export function GetRouting(arg1:string):Promise<apiclient.RoutingRuleDTO>;
 
 export function GetSettings():Promise<apiclient.SettingsDTO>;
 
+export function GetSpeedtestStatus():Promise<apiclient.SpeedtestStatus>;
+
 export function GetUser(arg1:string):Promise<apiclient.UserDTO>;
 
 export function GetWGPeer(arg1:number):Promise<apiclient.WGPeerDTO>;
@@ -142,6 +144,10 @@ export function SetupCFTunnel(arg1:string):Promise<apiclient.CFTunnelActionRespo
 
 export function SetupWGEnv():Promise<apiclient.WGSetupEnvResponse>;
 
+export function StartSpeedtest():Promise<apiclient.SpeedtestStatus>;
+
+export function StopSpeedtest():Promise<apiclient.SpeedtestStatus>;
+
 export function TestLatency():Promise<number>;
 
 export function TestOutbound(arg1:string):Promise<apiclient.OutboundTestResult>;
@@ -167,6 +173,8 @@ export function UpdateOutbound(arg1:string,arg2:apiclient.UpsertOutboundRequest)
 export function UpdateRouting(arg1:string,arg2:apiclient.UpsertRoutingRuleRequest):Promise<apiclient.RoutingRuleDTO>;
 
 export function UpdateSettings(arg1:apiclient.UpdateSettingsRequest):Promise<apiclient.SettingsDTO>;
+
+export function UpdateSpeedtest(arg1:apiclient.UpdateSpeedtestRequest):Promise<apiclient.SpeedtestStatus>;
 
 export function UpdateUser(arg1:string,arg2:apiclient.UpdateUserRequest):Promise<apiclient.UserDTO>;
 

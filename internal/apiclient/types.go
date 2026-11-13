@@ -678,11 +678,18 @@ type XrayConfigResponse struct {
 	Dirty       bool                   `json:"dirty,omitempty"`
 }
 
+type XrayApplyRequest struct {
+	Hot   bool `json:"hot"`
+	Force bool `json:"force"`
+}
+
 type XrayApplyResponse struct {
-	Applied   bool   `json:"applied"`
-	Method    string `json:"method"`
-	ConfigLen int    `json:"config_len"`
-	Message   string `json:"message"`
+	Applied   bool     `json:"applied"`
+	Method    string   `json:"method"`
+	ConfigLen int      `json:"config_len"`
+	Changed   bool     `json:"changed"`
+	Warnings  []string `json:"warnings,omitempty"`
+	Message   string   `json:"message"`
 }
 
 type SettingsDTO struct {
