@@ -72,23 +72,27 @@
         <div class="mt-2 text-[11px] text-muted flex items-center justify-between gap-1">
           <span class="truncate">到期：<span class="mono">{{ formatExpiry(status?.cert_expires_at) }}</span></span>
           <div class="flex items-center gap-1">
+            <n-tooltip trigger="hover">
+              <template #trigger>
+                <n-button
+                  size="tiny"
+                  secondary
+                  disabled
+                  @click="handleLogin"
+                >
+                  访客登录
+                </n-button>
+              </template>
+              访客免密登录因 Proton 官方人机验证机制暂未接入前端回调已暂时停用；请使用【导入会话】
+            </n-tooltip>
             <n-button
               size="tiny"
               type="primary"
               secondary
-              :disabled="!conn.status.connected || loggingIn"
-              :loading="loggingIn"
-              @click="handleLogin"
-            >
-              {{ status?.logged_in ? '刷新凭据' : '立即登录' }}
-            </n-button>
-            <n-button
-              size="tiny"
-              secondary
               :disabled="!conn.status.connected"
               @click="showImportModal = true"
             >
-              导入
+              {{ status?.logged_in ? '更新凭据' : '导入会话' }}
             </n-button>
           </div>
         </div>
@@ -429,26 +433,41 @@
     <n-modal
       v-model:show="showImportModal"
       preset="card"
-      title="导入 Proton Session 凭据"
+      title="导入 Proton 会话凭据"
       size="small"
-      style="max-width: 540px"
+      style="max-width: 580px"
     >
       <div class="space-y-4 text-xs">
-        <div class="text-muted leading-relaxed">
-          您可以直接粘贴已有的 Proton <code class="mono">session.json</code> 内容，服务端将直接加载并签发/刷新 WireGuard 证书，无需重复走访客注册。
-        </div>
+        <n-alert type="info" :show-icon="false">
+          <div class="space-y-1">
+            <div class="font-medium text-strong">凭据导入与自动续期说明：</div>
+            <div>• 必须包含 <code class="mono font-semibold">access_token</code> 与 <code class="mono font-semibold">refresh_token</code>。</div>
+            <div>• <strong>会话中无需包含证书</strong>：服务端会自动使用凭据向 Proton 签发 24 小时 WireGuard 证书，并在到期前使用 <code class="mono font-semibold">refresh_token</code> 自动静默续期。</div>
+          </div>
+        </n-alert>
 
-        <n-form-item label="Session JSON 内容" :show-feedback="false">
+        <n-form-item label="Session JSON 凭据内容" :show-feedback="false">
           <n-input
             v-model:value="importSessionJson"
             type="textarea"
-            :rows="6"
-            placeholder='{ "access_token": "...", "uid": "...", "wg_private_key": "..." }'
+            :rows="7"
+            placeholder='{
+  "access_token": "...",
+  "refresh_token": "...",
+  "uid": "..."
+}'
             class="font-mono text-xs"
           />
         </n-form-item>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex items-center justify-between text-muted text-[11px] pt-1">
+          <span>提示：支持兼容标准 JSON（大小写驼峰或下划线命名均可）</span>
+          <n-button text size="tiny" type="primary" @click="openExternalDenoHelper">
+            打开 ProtonVPN-Next Web 获取 Token ↗
+          </n-button>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-subtle">
           <n-button size="small" @click="showImportModal = false">取消</n-button>
           <n-button
             size="small"
@@ -758,10 +777,19 @@ async function handleContinueCaptcha() {
   }
 }
 
+async function openExternalDenoHelper() {
+  const url = 'https://protonvpn-next-web--main.smh01-mirrors.deno.net'
+  try {
+    await desktopApi.openBrowserURL(url)
+  } catch {
+    window.open(url, '_blank')
+  }
+}
+
 async function handleImportSession() {
   const raw = importSessionJson.value.trim()
   if (!raw) {
-    message.error('请输入 Session 内容')
+    message.error('请输入或粘贴 Session JSON 凭据')
     return
   }
   let parsed: any
@@ -771,23 +799,31 @@ async function handleImportSession() {
     message.error('Session 格式必须为合法 JSON')
     return
   }
-  if (!parsed.access_token) {
+
+  // 兼容驼峰和下划线
+  const accessToken = String(parsed.access_token || parsed.AccessToken || '').trim()
+  const refreshToken = String(parsed.refresh_token || parsed.RefreshToken || '').trim()
+  const uid = String(parsed.uid || parsed.UID || accessToken).trim()
+  const userId = String(parsed.user_id || parsed.UserID || '').trim()
+
+  if (!accessToken) {
     message.error('JSON 中必须包含 access_token 字段')
+    return
+  }
+  if (!refreshToken) {
+    message.error('JSON 中必须包含 refresh_token 字段（用于自动刷新续期）')
     return
   }
 
   importingSession.value = true
   try {
     const res = await desktopApi.importPVPNsession({
-      access_token: parsed.access_token,
-      refresh_token: parsed.refresh_token,
-      uid: parsed.uid,
-      user_id: parsed.user_id,
-      wg_private_key: parsed.wg_private_key,
-      wg_certificate: parsed.wg_certificate,
-      cert_expires_at: parsed.cert_expires_at
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      uid: uid,
+      user_id: userId
     })
-    message.success(res.message || 'Session 导入成功')
+    message.success(res.message || 'Proton 会话凭据导入成功，已自动申请 24 小时 WireGuard 证书')
     showImportModal.value = false
     importSessionJson.value = ''
     await loadData()
