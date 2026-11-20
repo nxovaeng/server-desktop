@@ -142,7 +142,7 @@ export function ListUsers(arg1:string):Promise<apiclient.UserListResponse>;
 
 export function ListWGPeers():Promise<apiclient.WGPeerListResponse>;
 
-export function LoginPVPN(arg1:string):Promise<apiclient.PVPNLoginResponse>;
+export function LoginPVPN(arg1:string,arg2:string):Promise<apiclient.PVPNLoginResponse>;
 
 export function OpenBrowserURL(arg1:string):Promise<void>;
 
@@ -194,7 +194,7 @@ export function UpdateInbound(arg1:string,arg2:apiclient.UpsertInboundRequest):P
 
 export function UpdateOutbound(arg1:string,arg2:apiclient.UpsertOutboundRequest):Promise<apiclient.OutboundDTO>;
 
-export function UpdatePVPNConfig(arg1:number):Promise<apiclient.PVPNConfigResponse>;
+export function UpdatePVPNConfig(arg1:number,arg2:string):Promise<apiclient.PVPNConfigResponse>;
 
 export function UpdateRouting(arg1:string,arg2:apiclient.UpsertRoutingRuleRequest):Promise<apiclient.RoutingRuleDTO>;
 

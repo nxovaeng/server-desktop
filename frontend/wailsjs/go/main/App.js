@@ -274,8 +274,8 @@ export function ListWGPeers() {
   return window['go']['main']['App']['ListWGPeers']();
 }
 
-export function LoginPVPN(arg1) {
-  return window['go']['main']['App']['LoginPVPN'](arg1);
+export function LoginPVPN(arg1, arg2) {
+  return window['go']['main']['App']['LoginPVPN'](arg1, arg2);
 }
 
 export function OpenBrowserURL(arg1) {
@@ -378,8 +378,8 @@ export function UpdateOutbound(arg1, arg2) {
   return window['go']['main']['App']['UpdateOutbound'](arg1, arg2);
 }
 
-export function UpdatePVPNConfig(arg1) {
-  return window['go']['main']['App']['UpdatePVPNConfig'](arg1);
+export function UpdatePVPNConfig(arg1, arg2) {
+  return window['go']['main']['App']['UpdatePVPNConfig'](arg1, arg2);
 }
 
 export function UpdateRouting(arg1, arg2) {

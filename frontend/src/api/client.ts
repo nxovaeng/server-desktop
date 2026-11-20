@@ -247,8 +247,8 @@ interface WailsAppBinding {
   InstallPVPN(): Promise<PVPNActionResponse>
   EnsurePVPNOutbound(): Promise<OutboundDTO>
   GetPVPNConfig(): Promise<PVPNConfigResponse>
-  UpdatePVPNConfig(socksPort: number): Promise<PVPNConfigResponse>
-  LoginPVPN(captchaToken?: string): Promise<PVPNLoginResponse>
+  UpdatePVPNConfig(socksPort: number, apiProxyUrl?: string): Promise<PVPNConfigResponse>
+  LoginPVPN(captchaToken?: string, apiProxyUrl?: string): Promise<PVPNLoginResponse>
   ImportPVPNsession(req: PVPNImportSessionRequest): Promise<PVPNLoginResponse>
   OpenBrowserURL(url: string): Promise<void>
 }
@@ -446,8 +446,8 @@ const rawDesktopApi = {
   installPVPN: () => getApp().InstallPVPN(),
   ensurePVPNOutbound: () => getApp().EnsurePVPNOutbound(),
   getPVPNConfig: () => getApp().GetPVPNConfig(),
-  updatePVPNConfig: (socksPort: number) => getApp().UpdatePVPNConfig(socksPort),
-  loginPVPN: (captchaToken = '') => getApp().LoginPVPN(captchaToken),
+  updatePVPNConfig: (socksPort: number, apiProxyUrl = '') => getApp().UpdatePVPNConfig(socksPort, apiProxyUrl),
+  loginPVPN: (captchaToken = '', apiProxyUrl = '') => getApp().LoginPVPN(captchaToken, apiProxyUrl),
   importPVPNsession: (req: PVPNImportSessionRequest) => getApp().ImportPVPNsession(req),
   openBrowserURL: (url: string) => getApp().OpenBrowserURL(url)
 }

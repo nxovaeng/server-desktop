@@ -868,6 +868,7 @@ export interface PVPNActionResponse {
 
 export interface PVPNConfigRequest {
   socks_port: number
+  api_proxy_url?: string
 }
 
 export interface PVPNConfigResponse {
@@ -875,6 +876,7 @@ export interface PVPNConfigResponse {
   socks_host: string
   data_dir: string
   session_path: string
+  api_proxy_url?: string
   message?: string
 }
 

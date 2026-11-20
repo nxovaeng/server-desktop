@@ -1059,24 +1059,24 @@ func (a *App) GetPVPNConfig() (apiclient.PVPNConfigResponse, error) {
 	return c.GetPVPNConfig(ctx)
 }
 
-func (a *App) UpdatePVPNConfig(socksPort int) (apiclient.PVPNConfigResponse, error) {
+func (a *App) UpdatePVPNConfig(socksPort int, apiProxyURL string) (apiclient.PVPNConfigResponse, error) {
 	c, err := a.client()
 	if err != nil {
 		return apiclient.PVPNConfigResponse{}, err
 	}
 	ctx, cancel := a.callCtx()
 	defer cancel()
-	return c.UpdatePVPNConfig(ctx, apiclient.PVPNConfigRequest{SocksPort: socksPort})
+	return c.UpdatePVPNConfig(ctx, apiclient.PVPNConfigRequest{SocksPort: socksPort, APIProxyURL: apiProxyURL})
 }
 
-func (a *App) LoginPVPN(captchaToken string) (apiclient.PVPNLoginResponse, error) {
+func (a *App) LoginPVPN(captchaToken, apiProxyURL string) (apiclient.PVPNLoginResponse, error) {
 	c, err := a.client()
 	if err != nil {
 		return apiclient.PVPNLoginResponse{}, err
 	}
 	ctx, cancel := a.timeoutCtx(45 * time.Second)
 	defer cancel()
-	return c.LoginPVPN(ctx, captchaToken)
+	return c.LoginPVPN(ctx, captchaToken, apiProxyURL)
 }
 
 func (a *App) ImportPVPNsession(req apiclient.PVPNImportSessionRequest) (apiclient.PVPNLoginResponse, error) {

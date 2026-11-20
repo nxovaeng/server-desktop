@@ -72,27 +72,23 @@
         <div class="mt-2 text-[11px] text-muted flex items-center justify-between gap-1">
           <span class="truncate">到期：<span class="mono">{{ formatExpiry(status?.cert_expires_at) }}</span></span>
           <div class="flex items-center gap-1">
-            <n-tooltip trigger="hover">
-              <template #trigger>
-                <n-button
-                  size="tiny"
-                  secondary
-                  disabled
-                  @click="handleLogin"
-                >
-                  访客登录
-                </n-button>
-              </template>
-              访客免密登录因 Proton 官方人机验证机制暂未接入前端回调已暂时停用；请使用【导入会话】
-            </n-tooltip>
             <n-button
               size="tiny"
               type="primary"
               secondary
+              :disabled="!conn.status.connected || loggingIn"
+              :loading="loggingIn"
+              @click="openGuestModal"
+            >
+              {{ status?.logged_in ? '刷新访客' : '访客登录' }}
+            </n-button>
+            <n-button
+              size="tiny"
+              secondary
               :disabled="!conn.status.connected"
               @click="showImportModal = true"
             >
-              {{ status?.logged_in ? '更新凭据' : '导入会话' }}
+              导入会话
             </n-button>
           </div>
         </div>
@@ -337,7 +333,7 @@
     >
       <div class="space-y-4">
         <div class="text-xs text-muted">
-          修改 WireProxy 本地 SOCKS5 监听端口。保存后将自动更新服务端系统设置、更新 Xray 的 proton 出站端口，并热重启 WireProxy 代理进程。
+          修改 WireProxy 本地 SOCKS5 监听端口及可选的 API 代理。保存后将自动更新服务端系统设置、更新 Xray 的 proton 出站端口，并热重启 WireProxy 代理进程。
         </div>
         <n-form-item label="SOCKS5 监听端口 (1-65535)" :show-feedback="false">
           <n-input-number
@@ -346,6 +342,13 @@
             :max="65535"
             placeholder="默认 1080"
             class="w-full"
+          />
+        </n-form-item>
+        <n-form-item label="Proton API 代理地址 (可选，用于访客免验证码)" :show-feedback="false">
+          <n-input
+            v-model:value="customProxyUrl"
+            placeholder="默认直连，或如 https://.../api"
+            class="font-mono text-xs w-full"
           />
         </n-form-item>
         <div class="flex justify-end gap-2 pt-2">
@@ -357,6 +360,61 @@
             @click="handleSavePort"
           >
             保存并应用
+          </n-button>
+        </div>
+      </div>
+    </n-modal>
+
+    <!-- Proton 匿名访客登录弹窗 -->
+    <n-modal
+      v-model:show="showGuestModal"
+      preset="card"
+      title="Proton 匿名访客登录"
+      size="small"
+      style="max-width: 520px"
+    >
+      <div class="space-y-4 text-xs">
+        <n-alert type="info" :show-icon="false">
+          <div class="leading-relaxed">
+            由于 VPS 云机房 IP 会触发 Proton 防刷人机验证（Code 9001），推荐<strong>启用 API 边缘代理</strong>进行注册。边缘代理节点（如 Deno Deploy）出口 IP 为全球 CDN 边缘，可免验证码直接获取凭据并自动签发 24 小时 WireGuard 证书。
+          </div>
+        </n-alert>
+
+        <n-form-item label="注册路由模式" :show-feedback="false">
+          <n-radio-group v-model:value="guestProxyMode">
+            <n-space>
+              <n-radio value="proxy">通过 API 代理注册（推荐，免验证码）</n-radio>
+              <n-radio value="direct">直连官方 API（若 VPS IP 干净）</n-radio>
+            </n-space>
+          </n-radio-group>
+        </n-form-item>
+
+        <n-form-item
+          v-if="guestProxyMode === 'proxy'"
+          label="API 代理地址 (Deno / Cloudflare Proxy)"
+          :show-feedback="false"
+        >
+          <n-input
+            v-model:value="guestProxyUrl"
+            placeholder="https://protonvpn-next-web--main.smh01-mirrors.deno.net/api"
+            class="font-mono text-xs w-full"
+          />
+        </n-form-item>
+
+        <div class="text-muted text-[11px] leading-relaxed">
+          • 注册成功后，底层 WireGuard 流量直连 Proton 节点，无需过代理。<br />
+          • 支持自建或使用社区 Deno Deploy 独立代理。
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-subtle">
+          <n-button size="small" @click="showGuestModal = false">取消</n-button>
+          <n-button
+            size="small"
+            type="primary"
+            :loading="loggingIn"
+            @click="handleDoGuestLogin"
+          >
+            一键登录并激活
           </n-button>
         </div>
       </div>
@@ -505,7 +563,12 @@ const loggingIn = ref(false)
 
 const showPortModal = ref(false)
 const customPort = ref<number | null>(1080)
+const customProxyUrl = ref('')
 const savingPort = ref(false)
+
+const showGuestModal = ref(false)
+const guestProxyMode = ref<'proxy' | 'direct'>('proxy')
+const guestProxyUrl = ref('https://protonvpn-next-web--main.smh01-mirrors.deno.net/api')
 
 const showCaptchaModal = ref(false)
 const captchaWebUrl = ref('')
@@ -693,8 +756,12 @@ async function handleEnsureOutbound() {
   }
 }
 
-function openPortModal() {
+async function openPortModal() {
   customPort.value = status.value?.port || 1080
+  try {
+    const cfg = await desktopApi.getPVPNConfig()
+    customProxyUrl.value = cfg.api_proxy_url || ''
+  } catch {}
   showPortModal.value = true
 }
 
@@ -705,8 +772,8 @@ async function handleSavePort() {
   }
   savingPort.value = true
   try {
-    const res = await desktopApi.updatePVPNConfig(customPort.value)
-    message.success(res.message || `已成功更新 SOCKS5 监听端口为 ${customPort.value}`)
+    const res = await desktopApi.updatePVPNConfig(customPort.value, customProxyUrl.value.trim())
+    message.success(res.message || `已成功更新配置 (SOCKS5 端口: ${customPort.value})`)
     showPortModal.value = false
     await loadData()
   } catch (err) {
@@ -735,21 +802,34 @@ async function handleCopyCaptchaUrl() {
   }
 }
 
-async function handleLogin() {
-  loggingIn.value = true
+async function openGuestModal() {
   try {
-    const res = await desktopApi.loginPVPN('')
+    const cfg = await desktopApi.getPVPNConfig()
+    if (cfg.api_proxy_url) {
+      guestProxyUrl.value = cfg.api_proxy_url
+    }
+  } catch {}
+  showGuestModal.value = true
+}
+
+async function handleDoGuestLogin() {
+  loggingIn.value = true
+  const proxy = guestProxyMode.value === 'proxy' ? guestProxyUrl.value.trim() : ''
+  try {
+    const res = await desktopApi.loginPVPN('', proxy)
     if (res.human_verification_needed) {
       captchaWebUrl.value = res.captcha_web_url || ''
       captchaToken.value = res.captcha_token || ''
+      showGuestModal.value = false
       showCaptchaModal.value = true
       message.warning('Proton 触发人机验证，请在弹出窗口中完成验证')
       return
     }
-    message.success(res.message || 'Proton 访客登录与凭据刷新成功')
+    showGuestModal.value = false
+    message.success(res.message || 'Proton 访客登录成功，已自动生成 24 小时 WireGuard 证书')
     await loadData()
   } catch (err) {
-    message.error('登录/刷新凭据失败: ' + formatError(err))
+    message.error('访客登录失败: ' + formatError(err))
   } finally {
     loggingIn.value = false
   }
@@ -761,8 +841,9 @@ async function handleContinueCaptcha() {
     return
   }
   loggingIn.value = true
+  const proxy = guestProxyMode.value === 'proxy' ? guestProxyUrl.value.trim() : ''
   try {
-    const res = await desktopApi.loginPVPN(captchaToken.value)
+    const res = await desktopApi.loginPVPN(captchaToken.value, proxy)
     if (res.human_verification_needed) {
       message.warning('验证尚未通过或已失效，请重新在浏览器完成验证后点击')
       return
